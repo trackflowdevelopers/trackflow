@@ -5,8 +5,9 @@
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
     "build": "nest build",
-    "migration:run": "typeorm migration:run -d src/database/datasource.ts",
-    "migration:generate": "typeorm migration:generate -d src/database/datasource.ts",
+    "migration:run": "node_modules/.bin/ts-node --project tsconfig.json node_modules/typeorm/cli.js migration:run -d src/database/data-source.ts",
+    "migration:generate": "node_modules/.bin/ts-node --project tsconfig.json node_modules/typeorm/cli.js migration:generate -d src/database/data-source.ts",
+    "migration:create": "node_modules/.bin/ts-node --project tsconfig.json node_modules/typeorm/cli.js migration:create",
     "seed:run": "ts-node src/database/seeds/index.ts"
   },
   "dependencies": {
@@ -25,6 +26,7 @@
     "bcryptjs": "^2.4.3",
     "class-transformer": "^0.5.0",
     "class-validator": "^0.14.0",
+    "dotenv": "^17.4.2",
     "ioredis": "^5.3.0",
     "mqtt": "^5.3.0",
     "passport-jwt": "^4.0.0",
@@ -38,8 +40,10 @@
     "@nestjs/testing": "^10.0.0",
     "@types/bcryptjs": "^2.4.0",
     "@types/node": "^20.0.0",
+    "@types/passport-jwt": "^4.0.1",
     "@types/pg": "^8.20.0",
     "ts-node": "^10.9.0",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.3.0"
   }
 }
