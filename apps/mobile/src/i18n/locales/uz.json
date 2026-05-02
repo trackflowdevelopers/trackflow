@@ -1,0 +1,23 @@
+{
+  "auth": {
+    "welcome": "Xush kelibsiz 👋",
+    "subtitle": "Hisobingizga kiring va flotingizni boshqaring",
+    "email": "EMAIL",
+    "password": "PAROL",
+    "emailPlaceholder": "manager@company.uz",
+    "forgot": "Parolni unutdingizmi?",
+    "submit": "Kirish",
+    "noAccount": "Hisob yo'qmi?",
+    "register": "Ro'yxatdan o'ting"
+  },
+  "validation": {
+    "emailRequired": "Email manzilni kiriting",
+    "emailInvalid": "Email manzil noto'g'ri",
+    "passwordRequired": "Parolni kiriting",
+    "passwordMin": "Parol kamida 6 ta belgidan iborat bo'lishi kerak"
+  },
+  "home": {
+    "greeting": "Salom, {{name}}",
+    "logout": "Chiqish"
+  }
+}

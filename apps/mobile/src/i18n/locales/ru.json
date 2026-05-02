@@ -1,0 +1,23 @@
+{
+  "auth": {
+    "welcome": "Добро пожаловать 👋",
+    "subtitle": "Войдите в аккаунт и управляйте автопарком",
+    "email": "EMAIL",
+    "password": "ПАРОЛЬ",
+    "emailPlaceholder": "manager@company.uz",
+    "forgot": "Забыли пароль?",
+    "submit": "Войти",
+    "noAccount": "Нет аккаунта?",
+    "register": "Зарегистрироваться"
+  },
+  "validation": {
+    "emailRequired": "Введите адрес email",
+    "emailInvalid": "Некорректный адрес email",
+    "passwordRequired": "Введите пароль",
+    "passwordMin": "Пароль должен содержать минимум 6 символов"
+  },
+  "home": {
+    "greeting": "Привет, {{name}}",
+    "logout": "Выйти"
+  }
+}

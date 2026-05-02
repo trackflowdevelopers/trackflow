@@ -1,0 +1,130 @@
+.scene {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.grid {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(var(--navy3) 1px, transparent 1px),
+    linear-gradient(90deg, var(--navy3) 1px, transparent 1px);
+  background-size: 48px 48px;
+  opacity: 0.5;
+}
+
+.glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+}
+
+.glow1 {
+  width: 600px; height: 600px;
+  top: -200px; right: -100px;
+  background: radial-gradient(circle, rgba(26,86,219,0.35) 0%, transparent 70%);
+  animation: glowPulse 6s ease-in-out infinite;
+}
+
+.glow2 {
+  width: 500px; height: 500px;
+  bottom: -150px; left: -100px;
+  background: radial-gradient(circle, rgba(0,194,255,0.2) 0%, transparent 70%);
+  animation: glowPulse 8s ease-in-out infinite 2s;
+}
+
+.glow3 {
+  width: 300px; height: 300px;
+  top: 40%; left: 35%;
+  background: radial-gradient(circle, rgba(0,229,160,0.1) 0%, transparent 70%);
+  animation: glowPulse 10s ease-in-out infinite 4s;
+}
+
+.road {
+  position: absolute;
+  background: var(--navy3);
+}
+
+.roadH {
+  left: 0; right: 0; height: 2px;
+}
+
+.roadH::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--tf-accent) 0px, var(--tf-accent) 16px,
+    transparent 16px, transparent 28px
+  );
+  opacity: 0.12;
+}
+
+.roadV {
+  top: 0; bottom: 0; width: 2px;
+}
+
+.routeSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.car {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.carDot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+  flex-shrink: 0;
+}
+
+.carLabel {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 2px 5px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.car1 {
+  color: var(--tf-primary);
+  animation: carPath1 14s linear infinite;
+  top: 38%;
+}
+.car1 .carLabel { background: rgba(26,86,219,0.2); color: var(--tf-accent); }
+
+.car2 {
+  color: var(--green);
+  animation: carPath2 18s linear infinite;
+  top: 56%;
+}
+.car2 .carLabel { background: rgba(0,229,160,0.15); color: var(--green); }
+
+.car3 {
+  color: var(--tf-accent);
+  animation: carPath3 11s linear infinite;
+  top: 24%;
+}
+.car3 .carLabel { background: rgba(0,194,255,0.15); color: var(--tf-accent); }
+
+.car4 {
+  color: var(--amber);
+  animation: carPath4 22s linear infinite;
+  top: 70%;
+}
+.car4 .carLabel { background: rgba(255,184,0,0.15); color: var(--amber); }

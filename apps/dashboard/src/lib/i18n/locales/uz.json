@@ -1,0 +1,37 @@
+{
+  "auth": {
+    "title": "Hisobga kirish",
+    "subtitle": "Flot boshqaruv paneliga kirish uchun ma'lumotlaringizni kiriting",
+    "email": "Email manzil",
+    "password": "Parol",
+    "rememberMe": "Meni eslab qol",
+    "forgot": "Parolni unutdingizmi?",
+    "submit": "Kirish",
+    "orWith": "yoki boshqa usul bilan",
+    "google": "Google Workspace bilan kirish",
+    "noAccount": "Hisob yo'qmi?",
+    "register": "Kompaniyangizni ro'yxatdan o'tkazing",
+    "ssl": "256-bit SSL shifrlash bilan himoyalangan",
+    "success": "Muvaffaqiyatli kirildi!",
+    "loading": "Dashboard yuklanmoqda..."
+  },
+  "validation": {
+    "emailRequired": "Email manzilni kiriting",
+    "emailInvalid": "Email manzil noto'g'ri",
+    "passwordRequired": "Parolni kiriting",
+    "passwordMin": "Parol kamida 6 ta belgidan iborat bo'lishi kerak"
+  },
+  "left": {
+    "headline1": "Flotingizni",
+    "headline2": "real vaqtda",
+    "headline3": "kuzating",
+    "description": "Toshkent va O'rta Osiyo kompaniyalari uchun GPS fleet management — yoqilg'i tejash, marshrut optimallashtirish, haydovchi nazorati.",
+    "fuel": "Yoqilg'i tejaladi",
+    "companies": "Kompaniyalar",
+    "realtime": "Real-time kuzatuv",
+    "active": "aktiv",
+    "stopped": "to'xtagan",
+    "warning": "ogohlantirish",
+    "repair": "ta'mirlash"
+  }
+}

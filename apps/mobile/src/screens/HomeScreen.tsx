@@ -1,20 +1,22 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { colors } from '../theme/colors';
 
 export function HomeScreen() {
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
 
   return (
     <View style={styles.container}>
       <Text style={styles.greeting}>
-        Salom, {user?.firstName} {user?.lastName}
+        {t('home.greeting', { name: `${user?.firstName} ${user?.lastName}` })}
       </Text>
       <Text style={styles.role}>{user?.role}</Text>
 
       <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-        <Text style={styles.logoutText}>Chiqish</Text>
+        <Text style={styles.logoutText}>{t('home.logout')}</Text>
       </TouchableOpacity>
     </View>
   );

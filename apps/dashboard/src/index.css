@@ -1,111 +1,128 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+@import "tailwindcss";
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+@theme inline {
+  --color-background:         var(--background);
+  --color-foreground:         var(--foreground);
+  --color-card:               var(--card);
+  --color-card-foreground:    var(--card-foreground);
+  --color-popover:            var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary:            var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary:          var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted:              var(--muted);
+  --color-muted-foreground:   var(--muted-foreground);
+  --color-accent:             var(--accent);
+  --color-accent-foreground:  var(--accent-foreground);
+  --color-destructive:        var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border:             var(--border);
+  --color-input:              var(--input);
+  --color-ring:               var(--ring);
+  --radius-sm:  calc(var(--radius) - 4px);
+  --radius-md:  calc(var(--radius) - 2px);
+  --radius-lg:  var(--radius);
+  --radius-xl:  calc(var(--radius) + 4px);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+:root {
+  /* TrackFlow design tokens
+     --tf-primary / --tf-accent / --tf-border are prefixed
+     to avoid collision with shadcn's --primary / --accent / --border */
+  --navy:       #0A1628;
+  --navy2:      #0f1e35;
+  --navy3:      #162640;
+  --tf-primary: #1A56DB;
+  --tf-accent:  #00C2FF;
+  --tf-border:  rgba(255,255,255,0.07);
+  --green:      #00E5A0;
+  --amber:      #FFB800;
+  --red:        #FF4560;
+  --text:       #FFFFFF;
+  --text2:      #8ba3c0;
+  --text3:      #3a5470;
+
+  /* shadcn CSS variables — dark theme tuned to TrackFlow palette */
+  --background:          oklch(0.145 0.025 250);
+  --foreground:          oklch(0.985 0 0);
+  --card:                oklch(0.175 0.025 250);
+  --card-foreground:     oklch(0.985 0 0);
+  --popover:             oklch(0.145 0.025 250);
+  --popover-foreground:  oklch(0.985 0 0);
+  --primary:             oklch(0.53 0.205 255);
+  --primary-foreground:  oklch(0.985 0 0);
+  --secondary:           oklch(0.22 0.025 250);
+  --secondary-foreground: oklch(0.75 0.02 250);
+  --muted:               oklch(0.22 0.025 250);
+  --muted-foreground:    oklch(0.60 0.02 250);
+  --accent:              oklch(0.22 0.025 250);
+  --accent-foreground:   oklch(0.985 0 0);
+  --destructive:         oklch(0.60 0.22 20);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border:              oklch(0.28 0.02 250);
+  --input:               oklch(0.28 0.02 250);
+  --ring:                oklch(0.53 0.205 255);
+  --radius:              0.5rem;
+
+  font-family: 'Space Grotesk', sans-serif;
+  color: var(--text);
+  background: var(--navy);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
 }
 
 #root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
 }
 
-body {
-  margin: 0;
+@keyframes glowPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.1); opacity: 0.7; }
 }
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+@keyframes carPath1 {
+  0%   { left: -5%; }
+  100% { left: 105%; }
 }
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
+@keyframes carPath2 {
+  0%   { left: 105%; }
+  100% { left: -5%; }
 }
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
+@keyframes carPath3 {
+  0%   { left: -5%; }
+  100% { left: 105%; }
 }
-p {
-  margin: 0;
+@keyframes carPath4 {
+  0%   { left: 105%; }
+  100% { left: -5%; }
 }
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+@keyframes dashMove {
+  to { stroke-dashoffset: -40; }
 }
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes slideLeft {
+  from { opacity: 0; transform: translateX(30px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes ping {
+  0%   { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(2); opacity: 0; }
 }
