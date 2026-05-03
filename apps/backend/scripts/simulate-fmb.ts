@@ -302,7 +302,7 @@ async function main(): Promise<void> {
   process.on('SIGTERM', shutdown);
 }
 
-main().catch((err: unknown) => {
+main().catch((err: Error) => {
   console.error(err);
   process.exit(1);
 });

@@ -53,9 +53,6 @@ importers:
       '@trackflow/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
-      '@trackflow/utils':
-        specifier: workspace:*
-        version: link:../../packages/utils
       bcryptjs:
         specifier: ^2.4.3
         version: 2.4.3
@@ -244,6 +241,9 @@ importers:
       '@trackflow/shared-types':
         specifier: workspace:*
         version: link:../../packages/shared-types
+      '@trackflow/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
       axios:
         specifier: ^1.16.0
         version: 1.16.0

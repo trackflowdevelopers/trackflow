@@ -21,7 +21,7 @@ import { getMapStyle } from '../lib/mapStyle';
 import { getVehicleRoute } from '../api/vehicles';
 import { formatDurationSec } from '../lib/status';
 import type { RootStackParamList } from '../navigation/types';
-import { useTheme } from '../theme/ThemeContext';
+import { useTheme } from '../theme/useTheme';
 
 type RouteMapNavRoute = RouteProp<RootStackParamList, 'RouteMap'>;
 

@@ -293,21 +293,3 @@ export function Icon({ name, size = 16, color = '#fff', strokeWidth = 1.8 }: Ico
   }
 }
 
-import type { StatusKey } from '../theme/colors';
-import { STATUS_STYLE } from '../theme/colors';
-
-export function StatusIcon({
-  status,
-  size = 12,
-  color,
-}: {
-  status: StatusKey;
-  size?: number;
-  color?: string;
-}) {
-  const c = color ?? STATUS_STYLE[status].fg;
-  if (status === 'moving') return <Icon name="play" size={size} color={c} />;
-  if (status === 'idle') return <Icon name="idle" size={size} color={c} />;
-  if (status === 'parked') return <Icon name="power-off" size={size} color={c} />;
-  return <Icon name="power-off" size={size} color={c} />;
-}

@@ -16,7 +16,7 @@ import { RouteMapScreen } from '../screens/RouteMapScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { Icon, type IconName } from '../components/Icon';
 import { colors } from '../theme/colors';
-import { useTheme } from '../theme/ThemeContext';
+import { useTheme } from '../theme/useTheme';
 import type { RootStackParamList, TabsParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();

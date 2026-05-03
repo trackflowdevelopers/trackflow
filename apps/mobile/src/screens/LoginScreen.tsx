@@ -16,7 +16,7 @@ import { StatusBar } from "expo-status-bar";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from '../context/useAuth';
 import { colors } from "../theme/colors";
 import { TrackFlowLogo } from "../icons/TrackFlowLogo";
 import { EmailIcon } from "../icons/EmailIcon";

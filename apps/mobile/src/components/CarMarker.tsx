@@ -3,9 +3,9 @@ import { View, Text } from "react-native";
 import { Marker } from "react-native-maps";
 import type { Vehicle, WsVehicleUpdate } from "@trackflow/shared-types";
 import { STATUS_STYLE, colors } from "../theme/colors";
-import { StatusIcon } from "./Icon";
-import { toStatusKey } from "../lib/status";
-import { useTheme } from "../theme/ThemeContext";
+import { StatusIcon } from './StatusIcon';
+import { toStatusKey } from '../lib/status';
+import { useTheme } from '../theme/useTheme';
 
 interface CarMarkerProps {
   vehicle: Vehicle;

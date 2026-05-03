@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useEffect, useState } from 'react';
 import { AuthUser } from '@trackflow/shared-types';
 import * as authService from '../services/authService';
 
-interface AuthContextValue {
+export interface AuthContextValue {
   user: AuthUser | null;
   accessToken: string | null;
   isLoading: boolean;
@@ -10,7 +10,7 @@ interface AuthContextValue {
   logout: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+export const AuthContext = createContext<AuthContextValue | null>(null);
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -66,8 +66,3 @@ export function AuthProvider({ children }: AuthProviderProps) {
   );
 }
 
-export function useAuth(): AuthContextValue {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-  return ctx;
-}

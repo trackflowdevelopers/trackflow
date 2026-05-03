@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, Animated, Easing } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Icon } from './Icon';
 import { colors } from '../theme/colors';
-import { useTheme } from '../theme/ThemeContext';
+import { useTheme } from '../theme/useTheme';
 
 interface AppHeaderProps {
   title?: string | null;

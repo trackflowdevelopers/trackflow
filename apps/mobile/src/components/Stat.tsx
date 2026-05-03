@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, ViewStyle, StyleProp } from 'react-native';
 import { Card } from './Card';
 import { colors } from '../theme/colors';
-import { useTheme } from '../theme/ThemeContext';
+import { useTheme } from '../theme/useTheme';
 
 interface StatProps {
   label: string;

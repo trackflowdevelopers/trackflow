@@ -21,6 +21,8 @@ import { Card } from '../components/Card';
 import { Stat } from '../components/Stat';
 import { Icon } from '../components/Icon';
 import { SpeedChart } from '../components/SpeedChart';
+import { InfoRow } from '../components/InfoRow';
+import { EventRow } from '../components/EventRow';
 import { colors, STATUS_STYLE } from '../theme/colors';
 import { toStatusKey, formatDurationSec } from '../lib/status';
 import { useFleetSocket } from '../hooks/useFleetSocket';
@@ -28,33 +30,12 @@ import { getVehicleById, getVehicleRoute, lockVehicle, unlockVehicle } from '../
 import { buildEvents, type RouteEvent } from '../lib/events';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
 import type { RootStackParamList } from '../navigation/types';
-import { useTheme } from '../theme/ThemeContext';
+import { useTheme } from '../theme/useTheme';
+import { todayLocalISO, dateRange, shiftDate, formatDisplayDate, maxSpeed } from '@trackflow/utils';
 
 type EventFilter = 'all' | 'alerts' | 'stops' | 'fuel';
 type DetailRoute = RouteProp<RootStackParamList, 'Detail'>;
 type DetailNav = NativeStackNavigationProp<RootStackParamList>;
-
-function todayLocalISO(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-}
-
-function dateRange(localDate: string): { from: string; to: string } {
-  const start = new Date(`${localDate}T00:00:00`);
-  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
-  return { from: start.toISOString(), to: end.toISOString() };
-}
-
-function shiftDate(iso: string, days: number): string {
-  const d = new Date(`${iso}T12:00:00`);
-  d.setDate(d.getDate() + days);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-function formatDisplayDate(iso: string): string {
-  const d = new Date(`${iso}T12:00:00`);
-  return d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' });
-}
 
 export function DetailScreen() {
   const { t } = useTranslation();
@@ -518,12 +499,6 @@ export function DetailScreen() {
   );
 }
 
-function maxSpeed(points: { speed: number }[]): number {
-  let max = 0;
-  for (const p of points) if (p.speed > max) max = p.speed;
-  return max;
-}
-
 function filterEvents(events: RouteEvent[], filter: EventFilter): RouteEvent[] {
   if (filter === 'all') return events;
   if (filter === 'alerts') return events.filter((e) => e.kind === 'alert' || e.kind === 'warn');
@@ -535,95 +510,6 @@ function filterEvents(events: RouteEvent[], filter: EventFilter): RouteEvent[] {
   return events;
 }
 
-interface InfoRowProps {
-  label: string;
-  value: string;
-  last?: boolean;
-  theme: ThemeTokens;
-}
-
-function InfoRow({ label, value, last, theme }: InfoRowProps) {
-  return (
-    <View
-      style={{
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: 10,
-        borderBottomWidth: last ? 0 : 1,
-        borderBottomColor: theme.borderSoft,
-      }}
-    >
-      <Text style={{ fontSize: 12, color: theme.text2 }}>{label}</Text>
-      <Text style={{ fontSize: 13, fontWeight: '600', color: theme.text }}>{value}</Text>
-    </View>
-  );
-}
-
-interface EventRowProps {
-  event: RouteEvent;
-  t: (k: string) => string;
-  last: boolean;
-  theme: ThemeTokens;
-}
-
-function EventRow({ event, t, last, theme }: EventRowProps) {
-  const kindColor = {
-    info: colors.info,
-    warn: colors.warn,
-    alert: colors.alert,
-  }[event.kind];
-
-  return (
-    <View
-      style={{
-        flexDirection: 'row',
-        gap: 12,
-        paddingHorizontal: 14,
-        paddingVertical: 12,
-        borderBottomWidth: last ? 0 : 1,
-        borderBottomColor: theme.borderSoft,
-      }}
-    >
-      <View
-        style={{
-          width: 30,
-          height: 30,
-          borderRadius: 8,
-          backgroundColor: kindColor + '20',
-          borderWidth: 1,
-          borderColor: kindColor + '40',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Icon name={event.icon as 'play'} size={14} color={kindColor} />
-      </View>
-      <View style={{ flex: 1 }}>
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'baseline',
-            gap: 8,
-          }}
-        >
-          <Text style={{ fontSize: 13, fontWeight: '600', color: theme.text }}>
-            {t(`detail.${event.type}`)}
-          </Text>
-          <Text style={{ fontSize: 11, color: theme.text3 }}>
-            {new Date(event.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </Text>
-        </View>
-        {event.durationSec !== undefined && (
-          <Text style={{ fontSize: 11, color: theme.text2, marginTop: 2 }}>
-            {formatDurationSec(event.durationSec, t)}
-          </Text>
-        )}
-      </View>
-    </View>
-  );
-}
 
 function makeStyles(theme: ThemeTokens) {
   return StyleSheet.create({

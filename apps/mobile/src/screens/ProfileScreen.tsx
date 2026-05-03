@@ -8,11 +8,12 @@ import type { ThemeTokens } from '@trackflow/shared-types';
 import { AppHeader } from '../components/AppHeader';
 import { Card } from '../components/Card';
 import { Stat } from '../components/Stat';
-import { Icon, type IconName } from '../components/Icon';
+import { Icon } from '../components/Icon';
+import { SettingRow } from '../components/SettingRow';
 import { colors } from '../theme/colors';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { getCompanyById, getVehicles } from '../api/vehicles';
-import { useTheme } from '../theme/ThemeContext';
+import { useTheme } from '../theme/useTheme';
 
 interface ProfileScreenProps {
   noop?: never;
@@ -191,49 +192,6 @@ export function ProfileScreen(_props: ProfileScreenProps = {}) {
         </TouchableOpacity>
       </ScrollView>
     </View>
-  );
-}
-
-interface SettingRowProps {
-  icon: IconName;
-  label: string;
-  value: string;
-  last?: boolean;
-  onPress?: () => void;
-  theme: ThemeTokens;
-}
-
-function SettingRow({ icon, label, value, last, onPress, theme }: SettingRowProps) {
-  const Comp = onPress ? TouchableOpacity : View;
-  return (
-    <Comp
-      onPress={onPress}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-        paddingHorizontal: 14,
-        paddingVertical: 14,
-        borderBottomWidth: last ? 0 : 1,
-        borderBottomColor: theme.borderSoft,
-      }}
-    >
-      <View
-        style={{
-          width: 32,
-          height: 32,
-          borderRadius: 10,
-          backgroundColor: `${colors.primary}22`,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Icon name={icon} size={15} color={colors.primary} />
-      </View>
-      <Text style={{ flex: 1, fontSize: 13, fontWeight: '500', color: theme.text }}>{label}</Text>
-      <Text style={{ fontSize: 12, color: theme.text2 }}>{value}</Text>
-      {onPress && <Icon name="chevron-right" size={14} color={theme.text3} />}
-    </Comp>
   );
 }
 

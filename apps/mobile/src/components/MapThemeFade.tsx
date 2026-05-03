@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, ViewStyle, StyleProp } from 'react-native';
-import { useTheme } from '../theme/ThemeContext';
+import { useTheme } from '../theme/useTheme';
 
 interface MapThemeFadeProps {
   style?: StyleProp<ViewStyle>;

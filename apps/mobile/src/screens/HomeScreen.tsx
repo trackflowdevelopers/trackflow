@@ -27,6 +27,7 @@ import { Stat } from '../components/Stat';
 import { CarMarker } from '../components/CarMarker';
 import { SelectedPreview } from '../components/SelectedPreview';
 import { Icon } from '../components/Icon';
+import { MapBtn } from '../components/MapBtn';
 import { MapThemeFade } from '../components/MapThemeFade';
 import { colors, STATUS_STYLE } from '../theme/colors';
 import { toStatusKey } from '../lib/status';
@@ -34,7 +35,7 @@ import { getMapStyle } from '../lib/mapStyle';
 import { useFleetSocket } from '../hooks/useFleetSocket';
 import { getVehicles } from '../api/vehicles';
 import type { RootStackParamList } from '../navigation/types';
-import { useTheme } from '../theme/ThemeContext';
+import { useTheme } from '../theme/useTheme';
 
 type StatusFilter = 'all' | 'moving' | 'idle' | 'parked' | 'offline';
 
@@ -295,37 +296,6 @@ export function HomeScreen() {
         )}
       </View>
     </View>
-  );
-}
-
-interface MapBtnProps {
-  icon: 'layers' | 'plus' | 'minus' | 'compass' | 'crosshair';
-  onPress: () => void;
-  theme: ThemeTokens;
-}
-
-function MapBtn({ icon, onPress, theme }: MapBtnProps) {
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      style={{
-        width: 36,
-        height: 36,
-        borderRadius: 11,
-        borderWidth: 1,
-        borderColor: theme.borderStrong,
-        backgroundColor: theme.surfaceFloat,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: theme.cardShadow,
-        shadowOpacity: theme.isDark ? 0 : 1,
-        shadowRadius: theme.isDark ? 0 : 6,
-        shadowOffset: { width: 0, height: theme.isDark ? 0 : 2 },
-        elevation: theme.isDark ? 0 : 3,
-      }}
-    >
-      <Icon name={icon} size={16} color={theme.text} />
-    </TouchableOpacity>
   );
 }
 

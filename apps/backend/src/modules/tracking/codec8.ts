@@ -72,7 +72,7 @@ export function decodeCodec8(buf: Buffer): Codec8Record[] | null {
       const ts = tsHigh * 0x100000000 + tsLow;
       offset += 8;
 
-      offset += 1; // priority
+      offset += 1;
 
       const lng = buf.readInt32BE(offset) / 10_000_000;
       offset += 4;
@@ -87,8 +87,8 @@ export function decodeCodec8(buf: Buffer): Codec8Record[] | null {
       const speed = buf.readUInt16BE(offset);
       offset += 2;
 
-      offset += 1; // event IO ID
-      offset += 1; // N of total IO
+      offset += 1;
+      offset += 1;
 
       const io = new Map<number, number>();
       let group: Map<number, number>;
@@ -102,7 +102,6 @@ export function decodeCodec8(buf: Buffer): Codec8Record[] | null {
       [group, offset] = readIoGroup(buf, offset, 4);
       group.forEach((v, k) => io.set(k, v));
 
-      // 8-byte IO: store only if value fits in safe integer (hi word = 0)
       const n8 = buf.readUInt8(offset);
       offset += 1;
       for (let i = 0; i < n8; i++) {
@@ -120,7 +119,7 @@ export function decodeCodec8(buf: Buffer): Codec8Record[] | null {
     }
 
     if (offset < buf.length) {
-      offset += 1; // num records 2
+      offset += 1;
       if (offset + 4 <= buf.length) {
         const expectedCrc = buf.readUInt32BE(offset) & 0xffff;
         const actualCrc = crc16ibm(buf, dataStart, offset);
