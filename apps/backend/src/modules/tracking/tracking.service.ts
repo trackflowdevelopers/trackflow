@@ -7,6 +7,7 @@ import { randomUUID } from 'crypto';
 import { VehicleEntity } from '../vehicles/entities/vehicle.entity';
 import { TrackingGateway } from './tracking.gateway';
 import type { FmbPayload, VehicleStatus, WsVehicleUpdate } from '@trackflow/shared-types';
+import { decodeCodec8, IO_IGNITION, IO_MOVEMENT, IO_ODOMETER, IO_DALLAS_TEMP_1 } from './codec8';
 
 function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371;
@@ -64,18 +65,44 @@ export class TrackingService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
+  private parsePayload(imei: string, message: Buffer): FmbPayload | null {
+    if (message[0] === 0x00 || message[0] === 0x08) {
+      const records = decodeCodec8(message);
+      if (!records || records.length === 0) {
+        this.logger.warn(`Failed to decode Codec 8 from IMEI ${imei}`);
+        return null;
+      }
+      const r = records[records.length - 1];
+      return {
+        ts: r.ts,
+        lat: r.lat,
+        lng: r.lng,
+        alt: r.alt,
+        speed: r.speed,
+        heading: r.heading,
+        sat: r.sat,
+        ignition: r.io.get(IO_IGNITION) ?? 0,
+        movement: r.io.get(IO_MOVEMENT) ?? 0,
+        etemp: r.io.has(IO_DALLAS_TEMP_1) ? r.io.get(IO_DALLAS_TEMP_1)! / 10 : undefined,
+        odo: r.io.has(IO_ODOMETER) ? r.io.get(IO_ODOMETER)! / 1000 : undefined,
+      };
+    }
+
+    try {
+      return JSON.parse(message.toString()) as FmbPayload;
+    } catch {
+      this.logger.warn(`Invalid payload from IMEI ${imei}`);
+      return null;
+    }
+  }
+
   private async handleMessage(topic: string, message: Buffer): Promise<void> {
     const parts = topic.split('/');
     if (parts.length !== 3 || parts[0] !== 'devices' || parts[2] !== 'data') return;
     const imei = parts[1];
 
-    let payload: FmbPayload;
-    try {
-      payload = JSON.parse(message.toString()) as FmbPayload;
-    } catch {
-      this.logger.warn(`Invalid JSON from IMEI ${imei}`);
-      return;
-    }
+    const payload = this.parsePayload(imei, message);
+    if (!payload) return;
 
     const vehicle = await this.vehiclesRepo.findOneBy({ deviceImei: imei });
     if (!vehicle) {
