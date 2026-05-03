@@ -70,7 +70,13 @@
     "arrived": "Manzilga yetdi",
     "departed": "Yo'lga chiqdi",
     "no_route": "Bugun yozuv yo'q",
-    "still_stopped": "Hozir ham to'xtagan"
+    "still_stopped": "Hozir ham to'xtagan",
+    "all": "Barchasi",
+    "view_on_map": "Xaritada ko'rish",
+    "idle_time": "Yonib turgan",
+    "parked_time": "Garajda to'xtagan",
+    "total_stopped": "Umumiy to'xtash",
+    "fuel_remaining": "Yoqilg'i qoldig'i"
   },
   "profile": {
     "title": "Profil",

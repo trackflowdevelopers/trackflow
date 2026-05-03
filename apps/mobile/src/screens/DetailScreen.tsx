@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   StyleSheet,
-  Linking,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
@@ -42,6 +41,17 @@ function dateRange(localDate: string): { from: string; to: string } {
   return { from: start.toISOString(), to: end.toISOString() };
 }
 
+function shiftDate(iso: string, days: number): string {
+  const d = new Date(`${iso}T12:00:00`);
+  d.setDate(d.getDate() + days);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function formatDisplayDate(iso: string): string {
+  const d = new Date(`${iso}T12:00:00`);
+  return d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' });
+}
+
 export function DetailScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -49,6 +59,10 @@ export function DetailScreen() {
   const { params } = useRoute<DetailRoute>();
   const { vehicleId } = params;
   const [eventFilter, setEventFilter] = useState<EventFilter>('all');
+  const [selectedDate, setSelectedDate] = useState(todayLocalISO);
+
+  const today = todayLocalISO();
+  const isToday = selectedDate === today;
 
   const { data: vehicle, isLoading } = useQuery({
     queryKey: ['vehicle', vehicleId],
@@ -59,15 +73,42 @@ export function DetailScreen() {
   const liveUpdates = useFleetSocket();
   const live = liveUpdates.get(vehicleId);
 
-  const { from, to } = useMemo(() => dateRange(todayLocalISO()), []);
+  const { from, to } = useMemo(() => dateRange(selectedDate), [selectedDate]);
+
   const { data: route } = useQuery({
     queryKey: ['vehicle-route', vehicleId, from, to],
     queryFn: () => getVehicleRoute(vehicleId, from, to),
-    refetchInterval: 10_000,
+    refetchInterval: isToday ? 10_000 : false,
   });
+
+  const routeStats = useMemo(() => {
+    const pts = route?.points ?? [];
+    let idleSec = 0;
+    let parkedSec = 0;
+    for (let i = 1; i < pts.length; i++) {
+      const prev = pts[i - 1];
+      const curr = pts[i];
+      const dt =
+        (new Date(curr.timestamp).getTime() - new Date(prev.timestamp).getTime()) / 1000;
+      if (!prev.ignition) {
+        parkedSec += dt;
+      } else if (prev.speed < 2) {
+        idleSec += dt;
+      }
+    }
+    return { idleSec, parkedSec };
+  }, [route?.points]);
 
   const events = useMemo(() => buildEvents(route), [route]);
   const filtered = useMemo(() => filterEvents(events, eventFilter), [events, eventFilter]);
+
+  const goToPrevDay = useCallback(() => setSelectedDate((d) => shiftDate(d, -1)), []);
+  const goToNextDay = useCallback(() => {
+    setSelectedDate((d) => {
+      const next = shiftDate(d, 1);
+      return next <= today ? next : d;
+    });
+  }, [today]);
 
   if (isLoading || !vehicle) {
     return (
@@ -84,11 +125,18 @@ export function DetailScreen() {
   const statusLabel = t(`home.${status}`);
 
   const totalKm = (route?.totalDistanceKm ?? 0).toFixed(1);
-  const driveMinutes = Math.floor((route?.totalDriveSec ?? 0) / 60);
-  const stopMinutes = Math.floor((route?.totalStopSec ?? 0) / 60);
+  const driveSec = route?.totalDriveSec ?? 0;
+  const totalStoppedSec = routeStats.idleSec + routeStats.parkedSec;
 
-  const callDriver = () => {
-    if (live) return;
+  const callDriver = () => {};
+
+  const openRouteMap = () => {
+    navigation.navigate('RouteMap', {
+      vehicleId,
+      plateNumber: vehicle.plateNumber,
+      from,
+      to,
+    });
   };
 
   return (
@@ -104,6 +152,25 @@ export function DetailScreen() {
         contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
       >
+        {/* Date picker */}
+        <View style={styles.datePicker}>
+          <TouchableOpacity onPress={goToPrevDay} style={styles.dateArrowBtn}>
+            <Icon name="arrow-left" size={16} color={colors.text2} />
+          </TouchableOpacity>
+          <View style={{ flex: 1, alignItems: 'center' }}>
+            <Text style={styles.dateLabel}>
+              {isToday ? t('detail.today') : formatDisplayDate(selectedDate)}
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={goToNextDay}
+            style={[styles.dateArrowBtn, isToday && { opacity: 0.3 }]}
+            disabled={isToday}
+          >
+            <Icon name="arrow-right" size={16} color={colors.text2} />
+          </TouchableOpacity>
+        </View>
+
         {/* Hero */}
         <View
           style={{
@@ -177,26 +244,49 @@ export function DetailScreen() {
           </View>
         </View>
 
-        {/* Stats grid 2x2 */}
+        {/* Stats grid 3x2 */}
         <View style={{ marginBottom: 14, gap: 8 }}>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <Stat
-              label={`${t('detail.distance')} (${t('detail.today')})`}
+              label={t('detail.distance')}
               value={totalKm}
               unit={t('units.km')}
             />
-            <Stat label={t('detail.duration')} value={formatDurationMin(driveMinutes, t)} />
+            <Stat
+              label={t('detail.duration')}
+              value={formatDurationSec(driveSec, t)}
+            />
           </View>
           <View style={{ flexDirection: 'row', gap: 8 }}>
-            <Stat label={t('detail.stopped_time')} value={formatDurationMin(stopMinutes, t)} />
             <Stat
-              label={t('detail.fuel_litres')}
+              label={t('detail.idle_time')}
+              value={formatDurationSec(routeStats.idleSec, t)}
+            />
+            <Stat
+              label={t('detail.parked_time')}
+              value={formatDurationSec(routeStats.parkedSec, t)}
+            />
+          </View>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Stat
+              label={t('detail.total_stopped')}
+              value={formatDurationSec(totalStoppedSec, t)}
+            />
+            <Stat
+              label={t('detail.fuel_remaining')}
               value={Math.round(fuel)}
               unit="%"
               sub={`~${vehicle.fuelConsumptionNorm}L/100km`}
             />
           </View>
         </View>
+
+        {/* View on map button */}
+        <TouchableOpacity onPress={openRouteMap} style={styles.mapBtn}>
+          <Icon name="map-pin" size={16} color={colors.text} />
+          <Text style={styles.mapBtnText}>{t('detail.view_on_map')}</Text>
+          <Icon name="arrow-right" size={14} color={colors.text2} />
+        </TouchableOpacity>
 
         {/* Speed chart */}
         <Card style={{ marginBottom: 14 }} padding={14}>
@@ -209,7 +299,7 @@ export function DetailScreen() {
             }}
           >
             <Text style={{ fontSize: 13, fontWeight: '600', color: colors.text }}>
-              {t('detail.speed')} · {t('detail.today')}
+              {t('detail.speed')} · {isToday ? t('detail.today') : formatDisplayDate(selectedDate)}
             </Text>
             <Text style={{ fontSize: 11, color: colors.text3 }}>
               max {Math.round(maxSpeed(route?.points ?? []))} km/h
@@ -280,11 +370,7 @@ export function DetailScreen() {
             label={t('detail.odometer')}
             value={`${Math.round(vehicle.totalMileage).toLocaleString()} ${t('units.km')}`}
           />
-          <InfoRow
-            label={t('detail.last_service')}
-            value={`—`}
-            last
-          />
+          <InfoRow label={t('detail.last_service')} value="—" last />
         </Card>
 
         {/* Full log header */}
@@ -361,14 +447,6 @@ function maxSpeed(points: { speed: number }[]): number {
   let max = 0;
   for (const p of points) if (p.speed > max) max = p.speed;
   return max;
-}
-
-function formatDurationMin(minutes: number, t: (k: string) => string): string {
-  if (minutes <= 0) return `0${t('units.min')}`;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (h > 0) return `${h}${t('units.hours')} ${m}${t('units.min')}`;
-  return `${m}${t('units.min')}`;
 }
 
 function filterEvents(events: RouteEvent[], filter: EventFilter): RouteEvent[] {
@@ -473,5 +551,43 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  datePicker: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+    paddingHorizontal: 4,
+  },
+  dateArrowBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dateLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  mapBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 14,
+    borderRadius: 14,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.primary + '55',
+    marginBottom: 14,
+  },
+  mapBtnText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.text,
   },
 });

@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HomeScreen } from '../screens/HomeScreen';
 import { DetailScreen } from '../screens/DetailScreen';
+import { RouteMapScreen } from '../screens/RouteMapScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { Icon, type IconName } from '../components/Icon';
 import { colors } from '../theme/colors';
@@ -117,6 +118,7 @@ export function RootNavigator() {
       <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
         <Stack.Screen name="Tabs" component={MainTabs} />
         <Stack.Screen name="Detail" component={DetailScreen} />
+        <Stack.Screen name="RouteMap" component={RouteMapScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

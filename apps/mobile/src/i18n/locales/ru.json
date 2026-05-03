@@ -70,7 +70,13 @@
     "arrived": "Прибыл",
     "departed": "Выехал",
     "no_route": "Сегодня записей нет",
-    "still_stopped": "Сейчас остановлен"
+    "still_stopped": "Сейчас остановлен",
+    "all": "Все",
+    "view_on_map": "На карте",
+    "idle_time": "Холостой ход",
+    "parked_time": "На стоянке",
+    "total_stopped": "Итого стоянка",
+    "fuel_remaining": "Остаток топлива"
   },
   "profile": {
     "title": "Профиль",

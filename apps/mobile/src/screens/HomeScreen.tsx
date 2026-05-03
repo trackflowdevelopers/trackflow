@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -44,6 +44,19 @@ const TASHKENT: Region = {
   latitudeDelta: 0.2,
   longitudeDelta: 0.2,
 };
+
+// Keep 1 point per ~16 m (0.00015 °). Always keeps the last point.
+function downsample(pts: RoutePoint[], minDeg = 0.00015): RoutePoint[] {
+  if (pts.length <= 2) return pts;
+  const out: RoutePoint[] = [pts[0]];
+  for (let i = 1; i < pts.length - 1; i++) {
+    const last = out[out.length - 1];
+    const d = Math.hypot(pts[i].lat - last.lat, pts[i].lng - last.lng);
+    if (d >= minDeg) out.push(pts[i]);
+  }
+  out.push(pts[pts.length - 1]);
+  return out;
+}
 
 function todayLocalISO(): string {
   const now = new Date();
@@ -118,10 +131,13 @@ export function HomeScreen() {
     return [...route.points, ...tail];
   }, [route, livePoints]);
 
+  // Downsampled copy used only for polyline drawing — event detection still uses full combinedPoints
+  const displayPoints = useMemo(() => downsample(combinedPoints), [combinedPoints]);
+
   const segments = useMemo(() => {
     const segs: { latitude: number; longitude: number }[][] = [];
     let current: { latitude: number; longitude: number }[] = [];
-    for (const p of combinedPoints) {
+    for (const p of displayPoints) {
       if (p.ignition) {
         current.push({ latitude: p.lat, longitude: p.lng });
       } else if (current.length > 1) {
@@ -133,7 +149,7 @@ export function HomeScreen() {
     }
     if (current.length > 1) segs.push(current);
     return segs;
-  }, [combinedPoints]);
+  }, [displayPoints]);
 
   const engineEvents = useMemo(() => {
     const pts = combinedPoints;
@@ -163,6 +179,12 @@ export function HomeScreen() {
 
   const stats = useMemo(() => computeStats(vehicles, liveUpdates), [vehicles, liveUpdates]);
 
+  // Stable refs so the animateToRegion effect doesn't need live/vehicles in its deps
+  const vehiclesRef = useRef(vehicles);
+  vehiclesRef.current = vehicles;
+  const liveRef = useRef(liveUpdates);
+  liveRef.current = liveUpdates;
+
   const fittedRef = useRef(false);
   useEffect(() => {
     if (fittedRef.current || vehicles.length === 0 || !mapRef.current) return;
@@ -183,17 +205,21 @@ export function HomeScreen() {
     fittedRef.current = true;
   }, [vehicles, liveUpdates]);
 
+  // Only animate when the SELECTION changes — not on every live update tick
   useEffect(() => {
-    if (!selectedVehicle || !mapRef.current) return;
-    const live = liveUpdates.get(selectedVehicle.id);
-    const lat = live?.latitude ?? selectedVehicle.lastLatitude;
-    const lng = live?.longitude ?? selectedVehicle.lastLongitude;
-    if (lat === null || lng === null) return;
+    if (!selectedId || !mapRef.current) return;
+    const v = vehiclesRef.current.find((veh) => veh.id === selectedId);
+    if (!v) return;
+    const live = liveRef.current.get(selectedId);
+    const lat = live?.latitude ?? v.lastLatitude;
+    const lng = live?.longitude ?? v.lastLongitude;
+    if (lat == null || lng == null) return;
     mapRef.current.animateToRegion(
       { latitude: lat, longitude: lng, latitudeDelta: 0.05, longitudeDelta: 0.05 },
       450,
     );
-  }, [selectedVehicle, liveUpdates]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId]);
 
   const filterChips: { id: StatusFilter; dot?: string }[] = [
     { id: 'all' },
@@ -269,7 +295,7 @@ export function HomeScreen() {
       <View style={styles.mapWrap}>
         <MapView
           ref={mapRef}
-          style={StyleSheet.absoluteFill}
+          style={styles.map}
           provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
           customMapStyle={Platform.OS === 'android' ? DARK_MAP_STYLE : undefined}
           initialRegion={TASHKENT}
@@ -285,23 +311,19 @@ export function HomeScreen() {
             />
           ))}
           {(route?.stops ?? []).map((s, i) => (
-            <Marker
+            <EventPin
               key={`stop-${i}`}
               coordinate={{ latitude: s.lat, longitude: s.lng }}
-              anchor={{ x: 0.5, y: 0.5 }}
-              tracksViewChanges
             >
               <View style={styles.stopMarker}>
                 <View style={styles.stopMarkerInner} />
               </View>
-            </Marker>
+            </EventPin>
           ))}
           {engineEvents.map((e, i) => (
-            <Marker
+            <EventPin
               key={`engine-${e.type}-${i}`}
               coordinate={{ latitude: e.lat, longitude: e.lng }}
-              anchor={{ x: 0.5, y: 0.5 }}
-              tracksViewChanges
             >
               <View
                 style={[
@@ -315,7 +337,7 @@ export function HomeScreen() {
                   color={e.type === 'on' ? colors.moving : colors.offline}
                 />
               </View>
-            </Marker>
+            </EventPin>
           ))}
           {filtered.map((v) => (
             <CarMarker
@@ -327,6 +349,10 @@ export function HomeScreen() {
             />
           ))}
         </MapView>
+
+        {/* Decorative border frame — sits on top of the map but below controls/overlays.
+            pointerEvents="none" so it doesn't swallow touch events. */}
+        <View pointerEvents="none" style={styles.mapBorderOverlay} />
 
         {/* Map controls */}
         <View style={[styles.mapControls, { top: 12 }]}>
@@ -429,6 +455,23 @@ function MapBtn({ icon, onPress }: MapBtnProps) {
   );
 }
 
+// Starts tracksViewChanges=true, flips to false after first layout — prevents permanent bitmap re-capture
+function EventPin({
+  coordinate,
+  children,
+}: {
+  coordinate: { latitude: number; longitude: number };
+  children: React.ReactNode;
+}) {
+  const [tracks, setTracks] = useState(true);
+  const onLayout = useCallback(() => setTracks(false), []);
+  return (
+    <Marker coordinate={coordinate} anchor={{ x: 0.5, y: 0.5 }} tracksViewChanges={tracks}>
+      <View onLayout={onLayout}>{children}</View>
+    </Marker>
+  );
+}
+
 function computeStats(vehicles: Vehicle[], liveUpdates: Map<string, WsVehicleUpdate>) {
   let moving = 0;
   let offline = 0;
@@ -474,14 +517,24 @@ const styles = StyleSheet.create({
     height: 7,
     borderRadius: 3.5,
   },
+  // Container has NO borderRadius / overflow — nothing here clips markers
   mapWrap: {
     flex: 1,
     marginHorizontal: 14,
     marginBottom: 14,
+  },
+  // borderRadius on the MapView itself clips only the map tiles (native layer).
+  // Custom marker Views live on a separate overlay — unaffected.
+  map: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 22,
+  },
+  // Pure decoration: rounded border drawn on top of everything.
+  mapBorderOverlay: {
+    ...StyleSheet.absoluteFillObject,
     borderRadius: 22,
     borderWidth: 1,
     borderColor: colors.border,
-    overflow: Platform.OS === 'ios' ? 'hidden' : 'visible',
   },
   mapControls: {
     position: 'absolute',
