@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from 'react-leaflet';
-import L, { LatLngBoundsExpression, LatLngTuple } from 'leaflet';
+import L, { type LatLngBoundsExpression, type LatLngTuple } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type {
   Vehicle,

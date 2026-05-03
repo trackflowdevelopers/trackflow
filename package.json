@@ -11,6 +11,7 @@
     "dev:dashboard": "pnpm --filter @trackflow/dashboard dev",
     "dev:mobile": "pnpm --filter @trackflow/mobile start",
     "build:all": "pnpm -r build",
+    "build:dashboard": "pnpm --filter @trackflow/dashboard build",
     "db:migrate": "pnpm --filter @trackflow/backend migration:run",
     "db:seed": "pnpm --filter @trackflow/backend seed:run",
     "infra:up": "docker compose -f infrastructure/docker/docker-compose.yml up -d postgres redis emqx",
