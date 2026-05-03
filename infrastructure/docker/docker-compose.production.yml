@@ -54,7 +54,6 @@ services:
       - emqx_log:/opt/emqx/log
     networks:
       - trackflow_internal
-      - trackflow_public
 
   backend:
     build:
