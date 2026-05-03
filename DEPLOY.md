@@ -32,10 +32,10 @@ Ushbu hujjat **TrackFlow** loyihasini production muhitga chiqarish bo'yicha to'l
 
 `trackflow.uz` domeni Cloudflare'da bo'lsa, DNS sahifasiga kirib quyidagi yozuvlarni qo'shing:
 
-| Type | Name | Content        | Proxy             |
-| ---- | ---- | -------------- | ----------------- |
-| A    | api  | <VPS_IP>       | DNS only (kulrang)|
-| A    | app  | 76.76.21.21    | Proxied (orange)  |
+| Type | Name | Content     | Proxy              |
+| ---- | ---- | ----------- | ------------------ |
+| A    | api  | <VPS_IP>    | DNS only (kulrang) |
+| A    | app  | 76.76.21.21 | Proxied (orange)   |
 
 - `api.trackflow.uz` — **DNS only** bo'lishi shart, chunki Let's Encrypt sertifikat olishi va MQTT (1883) ishlashi kerak. Cloudflare proxy WebSocket va non-HTTP portlarni bloklaydi.
 - `app.trackflow.uz` — Vercel CNAME beradi (keyinroq), hozircha placeholder.
@@ -136,22 +136,22 @@ Swagger docs: <https://api.trackflow.uz/api/docs>
 2. **Add New → Project** → `trackflowdevelopers/trackflow` repo'sini import qiling
 3. Quyidagi sozlamalarni qo'ying:
 
-   | Sozlama          | Qiymat                                                                              |
-   | ---------------- | ----------------------------------------------------------------------------------- |
-   | Framework Preset | Vite (avtomatik aniqlanadi `vercel.json`'dan)                                       |
-   | Root Directory   | `.` (repo ildizi — **subdirectory tanlamang**)                                      |
-   | Build Command    | (`vercel.json`'dan o'qiydi — bo'sh qoldiring)                                       |
-   | Output Directory | (`vercel.json`'dan o'qiydi — bo'sh qoldiring)                                       |
-   | Install Command  | (`vercel.json`'dan o'qiydi — bo'sh qoldiring)                                       |
+   | Sozlama          | Qiymat                                         |
+   | ---------------- | ---------------------------------------------- |
+   | Framework Preset | Vite (avtomatik aniqlanadi `vercel.json`'dan)  |
+   | Root Directory   | `.` (repo ildizi — **subdirectory tanlamang**) |
+   | Build Command    | (`vercel.json`'dan o'qiydi — bo'sh qoldiring)  |
+   | Output Directory | (`vercel.json`'dan o'qiydi — bo'sh qoldiring)  |
+   | Install Command  | (`vercel.json`'dan o'qiydi — bo'sh qoldiring)  |
 
 ### 3.2. Environment variable qo'shish
 
 Vercel Project Settings → **Environment Variables** bo'limida:
 
-| Name          | Value                              | Environment             |
-| ------------- | ---------------------------------- | ----------------------- |
-| `VITE_API_URL`| `https://api.trackflow.uz/api`     | Production, Preview, Dev|
-| `VITE_WS_URL` | `https://api.trackflow.uz`         | Production, Preview, Dev|
+| Name           | Value                          | Environment              |
+| -------------- | ------------------------------ | ------------------------ |
+| `VITE_API_URL` | `https://api.trackflow.uz/api` | Production, Preview, Dev |
+| `VITE_WS_URL`  | `https://api.trackflow.uz`     | Production, Preview, Dev |
 
 ### 3.3. Deploy
 
@@ -168,9 +168,9 @@ Vercel project → **Settings → Domains** → `app.trackflow.uz` qo'shing.
 
 Vercel CNAME yozuvini ko'rsatadi (masalan `cname.vercel-dns.com`). Cloudflare DNS'da `app` yozuvini quyidagicha o'zgartiring:
 
-| Type  | Name | Content                | Proxy             |
-| ----- | ---- | ---------------------- | ----------------- |
-| CNAME | app  | cname.vercel-dns.com   | DNS only (kulrang)|
+| Type  | Name | Content              | Proxy              |
+| ----- | ---- | -------------------- | ------------------ |
+| CNAME | app  | cname.vercel-dns.com | DNS only (kulrang) |
 
 > SSL'ni Cloudflare orqali qilmoqchi bo'lsangiz **Proxied (orange)** qilib qo'ying — Cloudflare o'z SSL'ini beradi, Vercel'ning sertifikati o'rnida.
 
@@ -200,14 +200,14 @@ Vercel allaqachon GitHub'ga ulangan — `main` branchga har push avtomatik produ
 
 Teltonika konfigurator orqali qurilmaga quyidagini yozing:
 
-| Parametr           | Qiymat                              |
-| ------------------ | ----------------------------------- |
-| Server IP / Domain | `api.trackflow.uz`                  |
-| Port               | `1883` (yoki `8883` TLS uchun)      |
-| Protocol           | MQTT                                |
-| Username           | `trackflow_6da9ad7c`                |
-| Password           | `N7NyZeY90nFBYkFn2tbjASitWSuApOvh`  |
-| Topic              | `devices/<IMEI>/data`               |
+| Parametr           | Qiymat                             |
+| ------------------ | ---------------------------------- |
+| Server IP / Domain | `api.trackflow.uz`                 |
+| Port               | `1883` (yoki `8883` TLS uchun)     |
+| Protocol           | MQTT                               |
+| Username           | `trackflow_6da9ad7c`               |
+| Password           | `N7NyZeY90nFBYkFn2tbjASitWSuApOvh` |
+| Topic              | `devices/<IMEI>/data`              |
 
 EMQX dashboard'iga kirish (faqat SSH tunnel orqali):
 
