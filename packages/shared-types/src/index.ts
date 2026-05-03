@@ -58,6 +58,10 @@ export interface Vehicle {
   fuelTankCapacity: number;
   fuelConsumptionNorm: number;
   deviceImei: string;
+  companyId: string;
+  companyName: string | null;
+  currentDriverId: string | null;
+  currentDriverName: string | null;
   status: VehicleStatus;
   lastLatitude: number | null;
   lastLongitude: number | null;
@@ -65,21 +69,92 @@ export interface Vehicle {
   lastFuelLevel: number | null;
   lastSeenAt: string | null;
   totalMileage: number;
-  currentDriver: Driver | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface Driver {
-  id: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
-  licenseNumber: string;
-  licenseExpiry: string;
-  isActive: boolean;
-  currentVehicle: Vehicle | null;
+export type VehicleSortBy = 'createdAt' | 'plateNumber' | 'status' | 'totalMileage';
+
+export interface CreateVehiclePayload {
+  plateNumber: string;
+  make: string;
+  model: string;
+  year: number;
+  fuelType: FuelType;
+  fuelTankCapacity: number;
+  fuelConsumptionNorm: number;
+  deviceImei: string;
+  companyId: string;
+  currentDriverId?: string;
+}
+
+export interface UpdateVehiclePayload {
+  plateNumber?: string;
+  make?: string;
+  model?: string;
+  year?: number;
+  fuelType?: FuelType;
+  fuelTankCapacity?: number;
+  fuelConsumptionNorm?: number;
+  deviceImei?: string;
+  companyId?: string;
+  currentDriverId?: string | null;
+  status?: VehicleStatus;
+  isActive?: boolean;
+}
+
+export interface VehicleListQuery {
+  search?: string;
+  companyId?: string;
+  status?: VehicleStatus;
+  sortBy?: VehicleSortBy;
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+}
+
+export interface RoutePoint {
+  lat: number;
+  lng: number;
+  speed: number;
+  ignition: boolean;
+  timestamp: string;
+}
+
+export interface RouteStop {
+  lat: number;
+  lng: number;
+  stoppedAt: string;
+  resumedAt: string | null;
+  durationSec: number;
+}
+
+export interface VehicleRoute {
+  vehicleId: string;
+  from: string;
+  to: string;
+  totalDistanceKm: number;
+  totalDriveSec: number;
+  totalStopSec: number;
+  points: RoutePoint[];
+  stops: RouteStop[];
+}
+
+export interface FmbPayload {
+  ts: number;
+  lat: number;
+  lng: number;
+  alt: number;
+  speed: number;
+  heading: number;
+  sat: number;
+  ignition: number;
+  movement: number;
+  fuel?: number;
+  etemp?: number;
+  rpm?: number;
+  odo?: number;
 }
 
 export interface TrackingPoint {
@@ -163,6 +238,84 @@ export interface FleetSummary {
   activeAlerts: number;
 }
 
+export interface User {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: UserRole;
+  companyId: string;
+  companyName: string | null;
+  phoneNumber: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateUserPayload {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  role: UserRole;
+  companyId: string;
+  phoneNumber?: string;
+}
+
+export interface UpdateUserPayload {
+  email?: string;
+  password?: string;
+  firstName?: string;
+  lastName?: string;
+  role?: UserRole;
+  companyId?: string;
+  phoneNumber?: string;
+  isActive?: boolean;
+}
+
+export interface UserListQuery {
+  search?: string;
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+  companyId?: string;
+  role?: UserRole;
+}
+
+export interface Company {
+  id: string;
+  name: string;
+  phone: string | null;
+  address: string | null;
+  isActive: boolean;
+  userCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateCompanyPayload {
+  name: string;
+  phone?: string;
+  address?: string;
+}
+
+export interface UpdateCompanyPayload {
+  name?: string;
+  phone?: string;
+  address?: string;
+  isActive?: boolean;
+}
+
+export type CompanySortBy = 'createdAt' | 'userCount';
+
+export interface CompanyListQuery {
+  search?: string;
+  sortBy?: CompanySortBy;
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+}
+
 export interface AuthUser {
   id: string;
   email: string;
@@ -189,11 +342,12 @@ export interface PaginatedResponse<T> {
 export interface WsVehicleUpdate {
   vehicleId: string;
   plateNumber: string;
+  companyId: string;
   latitude: number;
   longitude: number;
   speed: number;
   heading: number;
-  fuelLevel: number;
+  fuelLevel: number | null;
   status: VehicleStatus;
   timestamp: string;
 }

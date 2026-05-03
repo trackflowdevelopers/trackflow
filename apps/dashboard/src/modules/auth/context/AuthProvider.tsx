@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react';
-import type { ReactNode } from 'react';
-import type { AuthUser, LoginResponse } from '@trackflow/shared-types';
-import { AuthContext } from './authContext';
-import { getMe } from '@/api/queries/auth.query';
+import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
+import type { AuthUser, LoginResponse } from "@trackflow/shared-types";
+import { AuthContext } from "./authContext";
+import { getMe } from "@/api/queries/auth.query";
 import {
   refreshTokens,
   logout as clearTokens,
   getStoredAccessToken,
-} from '@/api/mutations/auth.mutation';
+} from "@/api/mutations/auth.mutation";
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -17,10 +17,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    restoreSession();
-  }, []);
 
   async function restoreSession() {
     const token = getStoredAccessToken();
@@ -54,8 +50,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setAccessToken(null);
   }
 
+  useEffect(() => {
+    restoreSession();
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, accessToken, isLoading, setSession, logout }}>
+    <AuthContext.Provider
+      value={{ user, accessToken, isLoading, setSession, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );

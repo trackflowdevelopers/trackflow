@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { UserRole } from '@trackflow/shared-types';
 
 @Entity('users')
@@ -24,9 +24,15 @@ export class UserEntity {
   @Column()
   companyId: string;
 
+  @Column({ type: 'varchar', nullable: true, default: null })
+  phoneNumber: string | null;
+
   @Column({ default: true })
   isActive: boolean;
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }
