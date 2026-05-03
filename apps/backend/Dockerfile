@@ -34,4 +34,4 @@ COPY --from=builder /app/packages/shared-types/dist ./packages/shared-types/dist
 COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
 WORKDIR /app/apps/backend
 EXPOSE 4000
-CMD ["node", "dist/main"]
+CMD ["node", "dist/src/main"]
