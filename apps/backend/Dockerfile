@@ -7,7 +7,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/backend/package.json ./apps/backend/
 COPY packages/shared-types/package.json ./packages/shared-types/
 COPY packages/utils/package.json ./packages/utils/
-RUN pnpm install --frozen-lockfile --force
+RUN pnpm install --no-frozen-lockfile --force
 
 FROM base AS development
 COPY --from=deps /app/node_modules ./node_modules
@@ -28,7 +28,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/backend/package.json ./apps/backend/
 COPY packages/shared-types/package.json ./packages/shared-types/
 COPY packages/utils/package.json ./packages/utils/
-RUN pnpm install --frozen-lockfile --prod --force
+RUN pnpm install --no-frozen-lockfile --prod --force
 COPY --from=builder /app/packages/shared-types/dist ./packages/shared-types/dist
 COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
 WORKDIR /app/apps/backend
