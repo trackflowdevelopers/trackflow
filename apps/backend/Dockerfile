@@ -1,5 +1,5 @@
 FROM node:20-alpine AS base
-RUN npm install -g pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 
 FROM base AS deps
@@ -19,12 +19,18 @@ CMD ["pnpm", "start:dev"]
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-WORKDIR /app/apps/backend
-RUN pnpm build
+RUN pnpm --filter @trackflow/shared-types build
+RUN pnpm --filter @trackflow/backend build
 
-FROM node:20-alpine AS production
-WORKDIR /app
-COPY --from=builder /app/apps/backend/dist ./dist
-COPY --from=builder /app/apps/backend/package.json ./
-RUN npm install --omit=dev
+FROM base AS production
+ENV NODE_ENV=production
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/backend/package.json ./apps/backend/
+COPY packages/shared-types/package.json ./packages/shared-types/
+COPY packages/utils/package.json ./packages/utils/
+RUN pnpm install --frozen-lockfile --prod
+COPY --from=builder /app/packages/shared-types/dist ./packages/shared-types/dist
+COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
+WORKDIR /app/apps/backend
+EXPOSE 4000
 CMD ["node", "dist/main"]

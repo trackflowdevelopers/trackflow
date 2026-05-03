@@ -22,3 +22,8 @@ apps/mobile/.kotlin
 apps/mobile/.metro-health-check
 apps/mobile/.metro-health-check*
 apps/mobile/.env
+
+infrastructure/docker/.env.production
+infrastructure/letsencrypt/
+infrastructure/emqx/data/
+infrastructure/emqx/log/
