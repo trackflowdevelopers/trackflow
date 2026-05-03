@@ -56,6 +56,14 @@ export class TrackingService implements OnModuleInit, OnModuleDestroy {
     this.client?.end();
   }
 
+  sendCommand(imei: string, command: string): void {
+    const topic = `devices/${imei}/cmd`;
+    this.client.publish(topic, command, { qos: 1 }, (err) => {
+      if (err) this.logger.error(`Command publish failed for ${imei}: ${err.message}`);
+      else this.logger.log(`Command sent to ${imei}: ${command}`);
+    });
+  }
+
   private async handleMessage(topic: string, message: Buffer): Promise<void> {
     const parts = topic.split('/');
     if (parts.length !== 3 || parts[0] !== 'devices' || parts[2] !== 'data') return;

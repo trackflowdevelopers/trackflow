@@ -18,6 +18,7 @@ interface SimVehicle {
   fuel: number;
   ignition: number;
   odometer: number;
+  immobilized: boolean;
 }
 
 interface VehicleRow {
@@ -28,6 +29,7 @@ interface VehicleRow {
   lastLongitude: number | null;
   lastFuelLevel: number | null;
   totalMileage: string | number;
+  isImmobilized: boolean;
 }
 
 function rand(min: number, max: number): number {
@@ -36,7 +38,11 @@ function rand(min: number, max: number): number {
 
 function autopilotTick(v: SimVehicle): void {
   if (Math.random() < 0.03) {
-    v.ignition = v.ignition === 1 ? 0 : 1;
+    if (v.ignition === 1) {
+      v.ignition = 0;
+    } else if (!v.immobilized) {
+      v.ignition = 1;
+    }
   }
   if (v.ignition === 1) {
     if (Math.random() < 0.3) {
@@ -106,11 +112,12 @@ function printBanner(vehicles: SimVehicle[], activeIndex: number): void {
 
 function renderHud(v: SimVehicle, activeIndex: number, total: number): void {
   const ign = v.ignition === 1 ? '\x1b[32mON \x1b[0m' : '\x1b[31mOFF\x1b[0m';
+  const lock = v.immobilized ? '\x1b[31m🔒LOCK\x1b[0m' : '\x1b[32m🔓OPEN\x1b[0m';
   const speed = String(Math.round(v.speed)).padStart(3);
   const hdg = String(Math.round(v.heading)).padStart(3);
   const fuel = String(Math.round(v.fuel)).padStart(3);
   process.stdout.write(
-    `\r[${activeIndex + 1}/${total}] ${v.plateNumber.padEnd(12)} │ ENG ${ign} │ ${speed} km/h │ hdg ${hdg}° │ fuel ${fuel}% │ ${v.lat.toFixed(4)},${v.lng.toFixed(4)}    `,
+    `\r[${activeIndex + 1}/${total}] ${v.plateNumber.padEnd(12)} │ ENG ${ign} │ ${lock} │ ${speed} km/h │ hdg ${hdg}° │ fuel ${fuel}% │ ${v.lat.toFixed(4)},${v.lng.toFixed(4)}    `,
   );
 }
 
@@ -119,7 +126,7 @@ async function main(): Promise<void> {
 
   const rows = await AppDataSource.manager.query<VehicleRow[]>(
     `SELECT id, "deviceImei", "plateNumber", "lastLatitude", "lastLongitude",
-            "lastFuelLevel", "totalMileage"
+            "lastFuelLevel", "totalMileage", "isImmobilized"
      FROM vehicles
      WHERE "isActive" = true
      ORDER BY "createdAt" DESC
@@ -144,7 +151,10 @@ async function main(): Promise<void> {
     fuel: row.lastFuelLevel ?? rand(40, 95),
     ignition: 0,
     odometer: Number(row.totalMileage) || 0,
+    immobilized: row.isImmobilized ?? false,
   }));
+
+  const vehiclesByImei = new Map(vehicles.map((v) => [v.imei, v]));
 
   await AppDataSource.destroy();
 
@@ -174,6 +184,7 @@ async function main(): Promise<void> {
 
   client.on('connect', () => {
     console.log(`✓ MQTT connected to ${url}`);
+    client.subscribe('devices/+/cmd', { qos: 1 });
     printBanner(vehicles, activeIndex);
 
     interval = setInterval(() => {
@@ -212,6 +223,10 @@ async function main(): Promise<void> {
         switch (key.name) {
           case 'w':
           case 'up':
+            if (v.immobilized && v.ignition !== 1) {
+              process.stdout.write(`\n🔒 [${v.plateNumber}] ENGINE LOCKED — cannot accelerate\n`);
+              break;
+            }
             if (v.ignition === 1) v.speed = Math.min(120, v.speed + 5);
             break;
           case 's':
@@ -231,6 +246,12 @@ async function main(): Promise<void> {
             process.stdout.write(`\n→ [${v.plateNumber}] EMERGENCY STOP (speed = 0)\n`);
             break;
           case 'e':
+            if (v.immobilized) {
+              process.stdout.write(
+                `\n🔒 [${v.plateNumber}] ENGINE LOCKED — cannot start (use mobile app to unlock)\n`,
+              );
+              break;
+            }
             if (v.ignition !== 1) {
               v.ignition = 1;
               process.stdout.write(`\n→ [${v.plateNumber}] ENGINE ON\n`);
@@ -255,6 +276,21 @@ async function main(): Promise<void> {
       });
     } else {
       console.warn('⚠ Not running in a TTY — keyboard control disabled, all vehicles on autopilot.');
+    }
+  });
+
+  client.on('message', (topic, message) => {
+    const parts = topic.split('/');
+    if (parts.length !== 3 || parts[0] !== 'devices' || parts[2] !== 'cmd') return;
+    const v = vehiclesByImei.get(parts[1]);
+    if (!v) return;
+    const cmd = message.toString().trim().toLowerCase();
+    if (cmd === 'setdigout 1 1') {
+      v.immobilized = true;
+      process.stdout.write(`\n🔒 [${v.plateNumber}] ENGINE LOCKED (DOUT1 = HIGH)\n`);
+    } else if (cmd === 'setdigout 1 0') {
+      v.immobilized = false;
+      process.stdout.write(`\n🔓 [${v.plateNumber}] ENGINE UNLOCKED (DOUT1 = LOW)\n`);
     }
   });
 

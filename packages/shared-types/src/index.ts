@@ -70,6 +70,7 @@ export interface Vehicle {
   lastSeenAt: string | null;
   totalMileage: number;
   isActive: boolean;
+  isImmobilized: boolean;
   createdAt: string;
   updatedAt: string;
 }

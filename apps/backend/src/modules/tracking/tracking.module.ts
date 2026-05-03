@@ -18,5 +18,6 @@ import { TrackingService } from './tracking.service';
     }),
   ],
   providers: [TrackingGateway, TrackingService],
+  exports: [TrackingService],
 })
 export class TrackingModule {}

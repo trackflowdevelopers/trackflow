@@ -60,6 +60,9 @@ export class VehicleEntity {
   @Column({ default: true })
   isActive: boolean;
 
+  @Column({ default: false })
+  isImmobilized: boolean;
+
   @CreateDateColumn()
   createdAt: Date;
 

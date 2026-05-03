@@ -32,3 +32,13 @@ export async function getCompanyById(id: string): Promise<Company> {
   const { data } = await apiClient.get<Company>(`/companies/${id}`);
   return data;
 }
+
+export async function lockVehicle(id: string): Promise<Vehicle> {
+  const { data } = await apiClient.post<Vehicle>(`/vehicles/${id}/immobilize`);
+  return data;
+}
+
+export async function unlockVehicle(id: string): Promise<Vehicle> {
+  const { data } = await apiClient.post<Vehicle>(`/vehicles/${id}/unimmobilize`);
+  return data;
+}

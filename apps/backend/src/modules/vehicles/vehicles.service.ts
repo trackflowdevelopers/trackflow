@@ -5,6 +5,7 @@ import { VehicleEntity } from './entities/vehicle.entity';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { ListVehiclesQueryDto } from './dto/list-vehicles-query.dto';
+import { TrackingService } from '../tracking/tracking.service';
 import type {
   Vehicle,
   PaginatedResponse,
@@ -46,6 +47,7 @@ interface VehicleRow {
   lastSeenAt: Date | null;
   totalMileage: number;
   isActive: boolean;
+  isImmobilized: boolean;
   createdAt: Date;
   updatedAt: Date;
   companyName: string | null;
@@ -64,6 +66,7 @@ export class VehiclesService {
   constructor(
     @InjectRepository(VehicleEntity)
     private readonly vehiclesRepo: Repository<VehicleEntity>,
+    private readonly trackingService: TrackingService,
   ) {}
 
   async findAll(query: ListVehiclesQueryDto): Promise<PaginatedResponse<Vehicle>> {
@@ -100,7 +103,7 @@ export class VehiclesService {
               v."fuelTankCapacity", v."fuelConsumptionNorm", v."deviceImei",
               v."companyId", v."currentDriverId", v.status,
               v."lastLatitude", v."lastLongitude", v."lastSpeed", v."lastFuelLevel",
-              v."lastSeenAt", v."totalMileage", v."isActive", v."createdAt", v."updatedAt",
+              v."lastSeenAt", v."totalMileage", v."isActive", v."isImmobilized", v."createdAt", v."updatedAt",
               c.name AS "companyName",
               CASE WHEN u.id IS NOT NULL
                 THEN u."firstName" || ' ' || u."lastName"
@@ -135,7 +138,7 @@ export class VehiclesService {
               v."fuelTankCapacity", v."fuelConsumptionNorm", v."deviceImei",
               v."companyId", v."currentDriverId", v.status,
               v."lastLatitude", v."lastLongitude", v."lastSpeed", v."lastFuelLevel",
-              v."lastSeenAt", v."totalMileage", v."isActive", v."createdAt", v."updatedAt",
+              v."lastSeenAt", v."totalMileage", v."isActive", v."isImmobilized", v."createdAt", v."updatedAt",
               c.name AS "companyName",
               CASE WHEN u.id IS NOT NULL
                 THEN u."firstName" || ' ' || u."lastName"
@@ -303,8 +306,27 @@ export class VehiclesService {
       lastSeenAt: row.lastSeenAt ? new Date(row.lastSeenAt).toISOString() : null,
       totalMileage: Number(row.totalMileage),
       isActive: row.isActive,
+      isImmobilized: row.isImmobilized,
       createdAt: new Date(row.createdAt).toISOString(),
       updatedAt: new Date(row.updatedAt).toISOString(),
     };
+  }
+
+  async immobilize(id: string): Promise<Vehicle> {
+    const vehicle = await this.vehiclesRepo.findOneBy({ id });
+    if (!vehicle) throw new NotFoundException(`Vehicle ${id} not found`);
+    vehicle.isImmobilized = true;
+    await this.vehiclesRepo.save(vehicle);
+    this.trackingService.sendCommand(vehicle.deviceImei, 'setdigout 1 1');
+    return this.findOne(id);
+  }
+
+  async unimmobilize(id: string): Promise<Vehicle> {
+    const vehicle = await this.vehiclesRepo.findOneBy({ id });
+    if (!vehicle) throw new NotFoundException(`Vehicle ${id} not found`);
+    vehicle.isImmobilized = false;
+    await this.vehiclesRepo.save(vehicle);
+    this.trackingService.sendCommand(vehicle.deviceImei, 'setdigout 1 0');
+    return this.findOne(id);
   }
 }

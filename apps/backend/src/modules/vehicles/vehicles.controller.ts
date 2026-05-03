@@ -63,4 +63,14 @@ export class VehiclesController {
   ) {
     return this.vehiclesService.getRoute(id, new Date(from), new Date(to));
   }
+
+  @Post(':id/immobilize')
+  immobilize(@Param('id') id: string) {
+    return this.vehiclesService.immobilize(id);
+  }
+
+  @Post(':id/unimmobilize')
+  unimmobilize(@Param('id') id: string) {
+    return this.vehiclesService.unimmobilize(id);
+  }
 }

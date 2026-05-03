@@ -5,6 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
   StyleSheet,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -22,8 +23,9 @@ import { SpeedChart } from '../components/SpeedChart';
 import { colors, STATUS_STYLE } from '../theme/colors';
 import { toStatusKey, formatDurationSec } from '../lib/status';
 import { useFleetSocket } from '../hooks/useFleetSocket';
-import { getVehicleById, getVehicleRoute } from '../api/vehicles';
+import { getVehicleById, getVehicleRoute, lockVehicle, unlockVehicle } from '../api/vehicles';
 import { buildEvents, type RouteEvent } from '../lib/events';
+import { useQueryClient, useMutation } from '@tanstack/react-query';
 import type { RootStackParamList } from '../navigation/types';
 
 type EventFilter = 'all' | 'alerts' | 'stops' | 'fuel';
@@ -110,6 +112,22 @@ export function DetailScreen() {
     });
   }, [today]);
 
+  const queryClient = useQueryClient();
+
+  const lockMutation = useMutation({
+    mutationFn: () => lockVehicle(vehicleId),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['vehicle', vehicleId], updated);
+    },
+  });
+
+  const unlockMutation = useMutation({
+    mutationFn: () => unlockVehicle(vehicleId),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['vehicle', vehicleId], updated);
+    },
+  });
+
   if (isLoading || !vehicle) {
     return (
       <View style={[styles.loading, { paddingTop: insets.top }]}>
@@ -127,6 +145,27 @@ export function DetailScreen() {
   const totalKm = (route?.totalDistanceKm ?? 0).toFixed(1);
   const driveSec = route?.totalDriveSec ?? 0;
   const totalStoppedSec = routeStats.idleSec + routeStats.parkedSec;
+
+  const isMoving = (live?.speed ?? vehicle.lastSpeed ?? 0) > 2;
+  const immobilized = vehicle.isImmobilized;
+  const isMutating = lockMutation.isPending || unlockMutation.isPending;
+
+  const handleImmobilizerPress = () => {
+    if (!immobilized && isMoving) {
+      Alert.alert('', t('detail.lock_moving_warn'));
+      return;
+    }
+    const title = immobilized ? t('detail.unlock_confirm_title') : t('detail.lock_confirm_title');
+    const msg = immobilized ? t('detail.unlock_confirm_msg') : t('detail.lock_confirm_msg');
+    Alert.alert(title, msg, [
+      { text: t('detail.confirm_no'), style: 'cancel' },
+      {
+        text: t('detail.confirm_yes'),
+        style: immobilized ? 'default' : 'destructive',
+        onPress: () => (immobilized ? unlockMutation.mutate() : lockMutation.mutate()),
+      },
+    ]);
+  };
 
   const callDriver = () => {};
 
@@ -286,6 +325,48 @@ export function DetailScreen() {
           <Icon name="map-pin" size={16} color={colors.text} />
           <Text style={styles.mapBtnText}>{t('detail.view_on_map')}</Text>
           <Icon name="arrow-right" size={14} color={colors.text2} />
+        </TouchableOpacity>
+
+        {/* Immobilizer button */}
+        <TouchableOpacity
+          onPress={handleImmobilizerPress}
+          disabled={isMutating}
+          style={[
+            styles.immobilizerBtn,
+            immobilized ? styles.immobilizerBtnLocked : styles.immobilizerBtnUnlocked,
+            isMutating && { opacity: 0.6 },
+          ]}
+        >
+          {isMutating ? (
+            <ActivityIndicator size="small" color={immobilized ? colors.alert : colors.text} />
+          ) : (
+            <Icon
+              name="shield"
+              size={18}
+              color={immobilized ? colors.alert : colors.text}
+            />
+          )}
+          <View style={{ flex: 1 }}>
+            <Text
+              style={[
+                styles.immobilizerBtnText,
+                { color: immobilized ? colors.alert : colors.text },
+              ]}
+            >
+              {immobilized ? t('detail.unlock_engine') : t('detail.lock_engine')}
+            </Text>
+            {immobilized && (
+              <Text style={styles.immobilizerBtnSub}>{t('detail.immobilized')}</Text>
+            )}
+          </View>
+          {!isMutating && (
+            <View
+              style={[
+                styles.immobilizerDot,
+                { backgroundColor: immobilized ? colors.alert : '#22c55e' },
+              ]}
+            />
+          )}
         </TouchableOpacity>
 
         {/* Speed chart */}
@@ -582,12 +663,44 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.primary + '55',
-    marginBottom: 14,
+    marginBottom: 10,
   },
   mapBtnText: {
     flex: 1,
     fontSize: 13,
     fontWeight: '600',
     color: colors.text,
+  },
+  immobilizerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 14,
+  },
+  immobilizerBtnLocked: {
+    backgroundColor: colors.alert + '18',
+    borderColor: colors.alert + '60',
+  },
+  immobilizerBtnUnlocked: {
+    backgroundColor: colors.surface,
+    borderColor: colors.borderStrong,
+  },
+  immobilizerBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  immobilizerBtnSub: {
+    fontSize: 11,
+    color: colors.alert,
+    fontWeight: '500',
+    marginTop: 1,
+  },
+  immobilizerDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
 });
