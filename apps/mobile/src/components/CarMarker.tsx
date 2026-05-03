@@ -5,6 +5,7 @@ import type { Vehicle, WsVehicleUpdate } from "@trackflow/shared-types";
 import { STATUS_STYLE, colors } from "../theme/colors";
 import { StatusIcon } from "./Icon";
 import { toStatusKey } from "../lib/status";
+import { useTheme } from "../theme/ThemeContext";
 
 interface CarMarkerProps {
   vehicle: Vehicle;
@@ -14,6 +15,7 @@ interface CarMarkerProps {
 }
 
 function CarMarkerInner({ vehicle, live, selected, onPress }: CarMarkerProps) {
+  const { theme } = useTheme();
   const [tracksViewChanges, setTracksViewChanges] = useState(true);
   const onLayout = useCallback(() => setTracksViewChanges(false), []);
 
@@ -21,7 +23,7 @@ function CarMarkerInner({ vehicle, live, selected, onPress }: CarMarkerProps) {
     setTracksViewChanges(true);
     const id = setTimeout(() => setTracksViewChanges(false), 350);
     return () => clearTimeout(id);
-  }, [selected]);
+  }, [selected, theme.name]);
 
   const lat = live?.latitude ?? vehicle.lastLatitude;
   const lng = live?.longitude ?? vehicle.lastLongitude;
@@ -46,7 +48,7 @@ function CarMarkerInner({ vehicle, live, selected, onPress }: CarMarkerProps) {
             paddingHorizontal: 8,
             paddingVertical: 5,
             borderRadius: 10,
-            backgroundColor: selected ? colors.text : "rgba(15,27,48,0.95)",
+            backgroundColor: selected ? theme.markerSelectedBg : theme.markerBg,
             borderWidth: 1.5,
             borderColor: selected ? colors.primary : c.ring,
             elevation: 6,
@@ -71,7 +73,7 @@ function CarMarkerInner({ vehicle, live, selected, onPress }: CarMarkerProps) {
               fontSize: 11,
               fontWeight: "700",
               letterSpacing: -0.2,
-              color: selected ? colors.bg : colors.text,
+              color: selected ? theme.markerSelectedText : theme.markerText,
             }}
           >
             {vehicle.plateNumber}
@@ -82,7 +84,7 @@ function CarMarkerInner({ vehicle, live, selected, onPress }: CarMarkerProps) {
               style={{
                 fontSize: 9,
                 fontWeight: "600",
-                color: selected ? "#475569" : "rgba(255,255,255,0.65)",
+                color: selected ? theme.markerSelectedSub : theme.markerSubtext,
                 marginLeft: 4,
               }}
             >

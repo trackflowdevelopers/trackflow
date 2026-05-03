@@ -8,18 +8,18 @@ import {
   Platform,
   StyleSheet,
 } from 'react-native';
-import MapView, { Polyline, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 import type { Region } from 'react-native-maps';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type {
   Vehicle,
-  RoutePoint,
   WsVehicleUpdate,
   VehicleStatus,
+  ThemeTokens,
 } from '@trackflow/shared-types';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { AppHeader } from '../components/AppHeader';
@@ -27,12 +27,14 @@ import { Stat } from '../components/Stat';
 import { CarMarker } from '../components/CarMarker';
 import { SelectedPreview } from '../components/SelectedPreview';
 import { Icon } from '../components/Icon';
+import { MapThemeFade } from '../components/MapThemeFade';
 import { colors, STATUS_STYLE } from '../theme/colors';
 import { toStatusKey } from '../lib/status';
-import { DARK_MAP_STYLE } from '../lib/mapStyle';
+import { getMapStyle } from '../lib/mapStyle';
 import { useFleetSocket } from '../hooks/useFleetSocket';
-import { getVehicles, getVehicleRoute } from '../api/vehicles';
+import { getVehicles } from '../api/vehicles';
 import type { RootStackParamList } from '../navigation/types';
+import { useTheme } from '../theme/ThemeContext';
 
 type StatusFilter = 'all' | 'moving' | 'idle' | 'parked' | 'offline';
 
@@ -45,37 +47,26 @@ const TASHKENT: Region = {
   longitudeDelta: 0.2,
 };
 
-// Keep 1 point per ~16 m (0.00015 °). Always keeps the last point.
-function downsample(pts: RoutePoint[], minDeg = 0.00015): RoutePoint[] {
-  if (pts.length <= 2) return pts;
-  const out: RoutePoint[] = [pts[0]];
-  for (let i = 1; i < pts.length - 1; i++) {
-    const last = out[out.length - 1];
-    const d = Math.hypot(pts[i].lat - last.lat, pts[i].lng - last.lng);
-    if (d >= minDeg) out.push(pts[i]);
-  }
-  out.push(pts[pts.length - 1]);
-  return out;
-}
-
-function todayLocalISO(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-}
-
-function dateRange(localDate: string): { from: string; to: string } {
-  const start = new Date(`${localDate}T00:00:00`);
-  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
-  return { from: start.toISOString(), to: end.toISOString() };
-}
-
 export function HomeScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<HomeNav>();
+  const { theme, themeName } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const mapRef = useRef<MapView | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [markerNonce, setMarkerNonce] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      setMarkerNonce((n) => n + 1);
+    }, []),
+  );
+
+  useEffect(() => {
+    setMarkerNonce((n) => n + 1);
+  }, [themeName]);
 
   const { data: vehiclesData, isLoading, isError } = useQuery({
     queryKey: ['vehicles', { mobile: true }],
@@ -87,85 +78,6 @@ export function HomeScreen() {
   const vehicles = vehiclesData?.data ?? [];
   const selectedVehicle = vehicles.find((v) => v.id === selectedId) ?? null;
   const liveSelected = selectedId ? liveUpdates.get(selectedId) : undefined;
-
-  const { from, to } = useMemo(() => dateRange(todayLocalISO()), []);
-
-  const { data: route } = useQuery({
-    queryKey: ['vehicle-route', selectedId, from, to],
-    queryFn: () => getVehicleRoute(selectedId!, from, to),
-    enabled: Boolean(selectedId),
-    refetchInterval: selectedId ? 10_000 : false,
-  });
-
-  const [livePoints, setLivePoints] = useState<RoutePoint[]>([]);
-
-  useEffect(() => {
-    setLivePoints([]);
-  }, [selectedId]);
-
-  useEffect(() => {
-    if (!selectedId || !liveSelected) return;
-    setLivePoints((prev) => {
-      const last = prev[prev.length - 1];
-      if (last && last.timestamp === liveSelected.timestamp) return prev;
-      return [
-        ...prev,
-        {
-          lat: liveSelected.latitude,
-          lng: liveSelected.longitude,
-          speed: liveSelected.speed,
-          ignition:
-            liveSelected.status === 'active' || liveSelected.status === 'idle',
-          timestamp: liveSelected.timestamp,
-        },
-      ];
-    });
-  }, [selectedId, liveSelected]);
-
-  const combinedPoints = useMemo<RoutePoint[]>(() => {
-    if (!route) return livePoints;
-    if (livePoints.length === 0) return route.points;
-    const last = route.points[route.points.length - 1];
-    const cutoff = last ? new Date(last.timestamp).getTime() : 0;
-    const tail = livePoints.filter((p) => new Date(p.timestamp).getTime() > cutoff);
-    return [...route.points, ...tail];
-  }, [route, livePoints]);
-
-  // Downsampled copy used only for polyline drawing — event detection still uses full combinedPoints
-  const displayPoints = useMemo(() => downsample(combinedPoints), [combinedPoints]);
-
-  const segments = useMemo(() => {
-    const segs: { latitude: number; longitude: number }[][] = [];
-    let current: { latitude: number; longitude: number }[] = [];
-    for (const p of displayPoints) {
-      if (p.ignition) {
-        current.push({ latitude: p.lat, longitude: p.lng });
-      } else if (current.length > 1) {
-        segs.push(current);
-        current = [];
-      } else {
-        current = [];
-      }
-    }
-    if (current.length > 1) segs.push(current);
-    return segs;
-  }, [displayPoints]);
-
-  const engineEvents = useMemo(() => {
-    const pts = combinedPoints;
-    if (pts.length < 2) return [];
-    const events: { lat: number; lng: number; type: 'on' | 'off'; timestamp: string }[] = [];
-    for (let i = 1; i < pts.length; i++) {
-      const prev = pts[i - 1];
-      const curr = pts[i];
-      if (!prev.ignition && curr.ignition) {
-        events.push({ lat: curr.lat, lng: curr.lng, type: 'on', timestamp: curr.timestamp });
-      } else if (prev.ignition && !curr.ignition) {
-        events.push({ lat: curr.lat, lng: curr.lng, type: 'off', timestamp: curr.timestamp });
-      }
-    }
-    return events;
-  }, [combinedPoints]);
 
   const filtered = useMemo(
     () =>
@@ -179,7 +91,6 @@ export function HomeScreen() {
 
   const stats = useMemo(() => computeStats(vehicles, liveUpdates), [vehicles, liveUpdates]);
 
-  // Stable refs so the animateToRegion effect doesn't need live/vehicles in its deps
   const vehiclesRef = useRef(vehicles);
   vehiclesRef.current = vehicles;
   const liveRef = useRef(liveUpdates);
@@ -205,7 +116,6 @@ export function HomeScreen() {
     fittedRef.current = true;
   }, [vehicles, liveUpdates]);
 
-  // Only animate when the SELECTION changes — not on every live update tick
   useEffect(() => {
     if (!selectedId || !mapRef.current) return;
     const v = vehiclesRef.current.find((veh) => veh.id === selectedId);
@@ -235,7 +145,6 @@ export function HomeScreen() {
     return (live?.latitude ?? v.lastLatitude) !== null;
   }).length;
 
-  // Tab bar is position:absolute, height ≈ paddingTop(10) + inner(54) + insets.bottom + 12 = 76 + insets.bottom
   const tabBarBottom = insets.bottom + 80;
 
   return (
@@ -272,15 +181,15 @@ export function HomeScreen() {
               style={[
                 styles.chip,
                 {
-                  backgroundColor: on ? colors.text : colors.surface,
-                  borderColor: on ? colors.text : colors.borderStrong,
+                  backgroundColor: on ? theme.chipBgActive : theme.chipBg,
+                  borderColor: on ? theme.chipBgActive : theme.borderStrong,
                 },
               ]}
             >
               {f.dot && <View style={[styles.chipDot, { backgroundColor: f.dot }]} />}
               <Text
                 style={{
-                  color: on ? colors.bg : colors.text2,
+                  color: on ? theme.chipFgActive : theme.text2,
                   fontSize: 12,
                   fontWeight: '600',
                 }}
@@ -297,51 +206,14 @@ export function HomeScreen() {
           ref={mapRef}
           style={styles.map}
           provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
-          customMapStyle={Platform.OS === 'android' ? DARK_MAP_STYLE : undefined}
+          customMapStyle={Platform.OS === 'android' ? getMapStyle(themeName) : undefined}
           initialRegion={TASHKENT}
           showsCompass={false}
           showsMyLocationButton={false}
         >
-          {segments.map((seg, i) => (
-            <Polyline
-              key={`seg-${i}`}
-              coordinates={seg}
-              strokeColor={colors.primary}
-              strokeWidth={4}
-            />
-          ))}
-          {(route?.stops ?? []).map((s, i) => (
-            <EventPin
-              key={`stop-${i}`}
-              coordinate={{ latitude: s.lat, longitude: s.lng }}
-            >
-              <View style={styles.stopMarker}>
-                <View style={styles.stopMarkerInner} />
-              </View>
-            </EventPin>
-          ))}
-          {engineEvents.map((e, i) => (
-            <EventPin
-              key={`engine-${e.type}-${i}`}
-              coordinate={{ latitude: e.lat, longitude: e.lng }}
-            >
-              <View
-                style={[
-                  styles.engineMarker,
-                  e.type === 'on' ? styles.engineMarkerOn : styles.engineMarkerOff,
-                ]}
-              >
-                <Icon
-                  name={e.type === 'on' ? 'power-on' : 'power-off'}
-                  size={11}
-                  color={e.type === 'on' ? colors.moving : colors.offline}
-                />
-              </View>
-            </EventPin>
-          ))}
           {filtered.map((v) => (
             <CarMarker
-              key={v.id}
+              key={`${v.id}-${markerNonce}`}
               vehicle={v}
               live={liveUpdates.get(v.id)}
               selected={selectedId === v.id}
@@ -350,27 +222,25 @@ export function HomeScreen() {
           ))}
         </MapView>
 
-        {/* Decorative border frame — sits on top of the map but below controls/overlays.
-            pointerEvents="none" so it doesn't swallow touch events. */}
+        <MapThemeFade style={{ borderRadius: 22 }} />
+
         <View pointerEvents="none" style={styles.mapBorderOverlay} />
 
-        {/* Map controls */}
         <View style={[styles.mapControls, { top: 12 }]}>
-          <MapBtn icon="layers" onPress={() => undefined} />
+          <MapBtn icon="layers" onPress={() => undefined} theme={theme} />
           <MapBtn
             icon="crosshair"
             onPress={() => mapRef.current?.animateToRegion(TASHKENT, 400)}
+            theme={theme}
           />
         </View>
 
-        {/* Loading */}
         {isLoading && (
           <View style={styles.loading}>
             <ActivityIndicator color={colors.primary} />
           </View>
         )}
 
-        {/* API error */}
         {isError && (
           <View style={styles.errorBanner}>
             <Icon name="alert-circle" size={14} color={colors.offline} />
@@ -380,7 +250,6 @@ export function HomeScreen() {
           </View>
         )}
 
-        {/* No GPS data hint */}
         {!isLoading && !isError && vehicles.length > 0 && gpsCount === 0 && (
           <View style={styles.hintBanner}>
             <Icon name="map-pin" size={14} color={colors.warn} />
@@ -390,7 +259,6 @@ export function HomeScreen() {
           </View>
         )}
 
-        {/* Selected preview OR fleet overview */}
         {selectedVehicle ? (
           <SelectedPreview
             vehicle={selectedVehicle}
@@ -413,14 +281,14 @@ export function HomeScreen() {
               <Icon name="truck" size={16} color={colors.primary} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 13, color: colors.text, fontWeight: '600' }}>
+              <Text style={{ fontSize: 13, color: theme.text, fontWeight: '600' }}>
                 {t('home.fleet_overview')}
               </Text>
-              <Text style={{ fontSize: 11, color: colors.text2 }}>
+              <Text style={{ fontSize: 11, color: theme.text2 }}>
                 {vehicles.length} {t('home.cars')} · {gpsCount} {t('home.on_map')}
               </Text>
             </View>
-            <Text style={{ fontSize: 11, color: colors.text3 }}>
+            <Text style={{ fontSize: 11, color: theme.text3 }}>
               {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </Text>
           </View>
@@ -433,9 +301,10 @@ export function HomeScreen() {
 interface MapBtnProps {
   icon: 'layers' | 'plus' | 'minus' | 'compass' | 'crosshair';
   onPress: () => void;
+  theme: ThemeTokens;
 }
 
-function MapBtn({ icon, onPress }: MapBtnProps) {
+function MapBtn({ icon, onPress, theme }: MapBtnProps) {
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -444,31 +313,19 @@ function MapBtn({ icon, onPress }: MapBtnProps) {
         height: 36,
         borderRadius: 11,
         borderWidth: 1,
-        borderColor: colors.borderStrong,
-        backgroundColor: 'rgba(15,27,48,0.92)',
+        borderColor: theme.borderStrong,
+        backgroundColor: theme.surfaceFloat,
         alignItems: 'center',
         justifyContent: 'center',
+        shadowColor: theme.cardShadow,
+        shadowOpacity: theme.isDark ? 0 : 1,
+        shadowRadius: theme.isDark ? 0 : 6,
+        shadowOffset: { width: 0, height: theme.isDark ? 0 : 2 },
+        elevation: theme.isDark ? 0 : 3,
       }}
     >
-      <Icon name={icon} size={16} color={colors.text} />
+      <Icon name={icon} size={16} color={theme.text} />
     </TouchableOpacity>
-  );
-}
-
-// Starts tracksViewChanges=true, flips to false after first layout — prevents permanent bitmap re-capture
-function EventPin({
-  coordinate,
-  children,
-}: {
-  coordinate: { latitude: number; longitude: number };
-  children: React.ReactNode;
-}) {
-  const [tracks, setTracks] = useState(true);
-  const onLayout = useCallback(() => setTracks(false), []);
-  return (
-    <Marker coordinate={coordinate} anchor={{ x: 0.5, y: 0.5 }} tracksViewChanges={tracks}>
-      <View onLayout={onLayout}>{children}</View>
-    </Marker>
   );
 }
 
@@ -498,133 +355,104 @@ function computeStats(vehicles: Vehicle[], liveUpdates: Map<string, WsVehicleUpd
   };
 }
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
-  chipDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-  },
-  // Container has NO borderRadius / overflow — nothing here clips markers
-  mapWrap: {
-    flex: 1,
-    marginHorizontal: 14,
-    marginBottom: 14,
-  },
-  // borderRadius on the MapView itself clips only the map tiles (native layer).
-  // Custom marker Views live on a separate overlay — unaffected.
-  map: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 22,
-  },
-  // Pure decoration: rounded border drawn on top of everything.
-  mapBorderOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  mapControls: {
-    position: 'absolute',
-    right: 12,
-    flexDirection: 'column',
-    gap: 6,
-  },
-  loading: {
-    position: 'absolute',
-    top: 16,
-    left: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: 'rgba(15,27,48,0.92)',
-    borderRadius: 12,
-  },
-  fleetPill: {
-    position: 'absolute',
-    left: 12,
-    right: 12,
-    bottom: 12,
-    backgroundColor: 'rgba(15,27,48,0.92)',
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    borderRadius: 16,
-    padding: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  stopMarker: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: colors.idleBg,
-    borderWidth: 2,
-    borderColor: colors.idle,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stopMarkerInner: {
-    width: 8,
-    height: 8,
-    backgroundColor: colors.idle,
-    borderRadius: 2,
-  },
-  engineMarker: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  engineMarkerOn: {
-    backgroundColor: colors.movingBg,
-    borderColor: colors.moving,
-  },
-  engineMarkerOff: {
-    backgroundColor: colors.offlineBg,
-    borderColor: colors.offline,
-  },
-  errorBanner: {
-    position: 'absolute',
-    top: 12,
-    left: 12,
-    right: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    backgroundColor: colors.offlineBg,
-    borderWidth: 1,
-    borderColor: colors.offlineRing,
-    borderRadius: 12,
-  },
-  hintBanner: {
-    position: 'absolute',
-    top: 12,
-    left: 12,
-    right: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    backgroundColor: colors.idleBg,
-    borderWidth: 1,
-    borderColor: colors.idleRing,
-    borderRadius: 12,
-  },
-});
+function makeStyles(theme: ThemeTokens) {
+  return StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: theme.bg,
+    },
+    chip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+      borderRadius: 999,
+      borderWidth: 1,
+    },
+    chipDot: {
+      width: 7,
+      height: 7,
+      borderRadius: 3.5,
+    },
+    mapWrap: {
+      flex: 1,
+      marginHorizontal: 14,
+      marginBottom: 14,
+    },
+    map: {
+      ...StyleSheet.absoluteFillObject,
+      borderRadius: 22,
+    },
+    mapBorderOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      borderRadius: 22,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    mapControls: {
+      position: 'absolute',
+      right: 12,
+      flexDirection: 'column',
+      gap: 6,
+    },
+    loading: {
+      position: 'absolute',
+      top: 16,
+      left: 16,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      backgroundColor: theme.surfaceStrong,
+      borderRadius: 12,
+    },
+    fleetPill: {
+      position: 'absolute',
+      left: 12,
+      right: 12,
+      bottom: 12,
+      backgroundColor: theme.surfaceStrong,
+      borderWidth: 1,
+      borderColor: theme.borderStrong,
+      borderRadius: 16,
+      padding: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      shadowColor: theme.cardShadow,
+      shadowOpacity: theme.isDark ? 0 : 1,
+      shadowRadius: theme.isDark ? 0 : 10,
+      shadowOffset: { width: 0, height: theme.isDark ? 0 : 6 },
+      elevation: theme.isDark ? 0 : 4,
+    },
+    errorBanner: {
+      position: 'absolute',
+      top: 12,
+      left: 12,
+      right: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 9,
+      backgroundColor: colors.offlineBg,
+      borderWidth: 1,
+      borderColor: colors.offlineRing,
+      borderRadius: 12,
+    },
+    hintBanner: {
+      position: 'absolute',
+      top: 12,
+      left: 12,
+      right: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 9,
+      backgroundColor: colors.idleBg,
+      borderWidth: 1,
+      borderColor: colors.idleRing,
+      borderRadius: 12,
+    },
+  });
+}

@@ -7,7 +7,7 @@ export type IconName =
   | 'search' | 'filter' | 'layers' | 'plus' | 'minus' | 'compass'
   | 'chevron-right' | 'chevron-down' | 'bell' | 'clock' | 'route' | 'gauge'
   | 'truck' | 'shield' | 'globe' | 'logout' | 'tune' | 'check' | 'logo'
-  | 'close' | 'crosshair' | 'alert-circle';
+  | 'close' | 'crosshair' | 'alert-circle' | 'sun' | 'moon';
 
 interface IconProps {
   name: IconName;
@@ -263,6 +263,29 @@ export function Icon({ name, size = 16, color = '#fff', strokeWidth = 1.8 }: Ico
           <Circle cx={12} cy={12} r={9} stroke={stroke} strokeWidth={sw} />
           <Path d="M12 8v4" stroke={stroke} strokeWidth={sw} strokeLinecap="round" />
           <Circle cx={12} cy={16} r={0.8} fill={stroke} />
+        </Svg>
+      );
+    case 'sun':
+      return (
+        <Svg {...props}>
+          <Circle cx={12} cy={12} r={4} stroke={stroke} strokeWidth={sw} />
+          <Path
+            d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+            stroke={stroke}
+            strokeWidth={sw}
+            strokeLinecap="round"
+          />
+        </Svg>
+      );
+    case 'moon':
+      return (
+        <Svg {...props}>
+          <Path
+            d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+            stroke={stroke}
+            strokeWidth={sw}
+            strokeLinejoin="round"
+          />
         </Svg>
       );
     default:

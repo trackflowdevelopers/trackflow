@@ -359,3 +359,42 @@ export interface ReportExportRequest {
   from: string;
   to: string;
 }
+
+export type ThemeName = 'dark' | 'light';
+
+export interface ThemeTokens {
+  name: ThemeName;
+  isDark: boolean;
+  statusBarStyle: 'light-content' | 'dark-content';
+  bg: string;
+  bg2: string;
+  bodyBg: string;
+  surface: string;
+  surface2: string;
+  surfaceStrong: string;
+  surfaceFloat: string;
+  surfaceElev: string;
+  border: string;
+  borderStrong: string;
+  borderSoft: string;
+  text: string;
+  text2: string;
+  text3: string;
+  textFaint: string;
+  chipBg: string;
+  chipBgActive: string;
+  chipFgActive: string;
+  overlayPlate: string;
+  navBg: string;
+  iconBtnBg: string;
+  iconBtnFg: string;
+  markerBg: string;
+  markerText: string;
+  markerSubtext: string;
+  markerSelectedBg: string;
+  markerSelectedText: string;
+  markerSelectedSub: string;
+  markerShadow: string;
+  cardShadow: string;
+  themeToggleFg: string;
+}

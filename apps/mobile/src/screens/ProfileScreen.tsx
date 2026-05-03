@@ -3,6 +3,8 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-nati
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { ThemeTokens } from '@trackflow/shared-types';
+
 import { AppHeader } from '../components/AppHeader';
 import { Card } from '../components/Card';
 import { Stat } from '../components/Stat';
@@ -10,11 +12,18 @@ import { Icon, type IconName } from '../components/Icon';
 import { colors } from '../theme/colors';
 import { useAuth } from '../context/AuthContext';
 import { getCompanyById, getVehicles } from '../api/vehicles';
+import { useTheme } from '../theme/ThemeContext';
 
-export function ProfileScreen() {
+interface ProfileScreenProps {
+  noop?: never;
+}
+
+export function ProfileScreen(_props: ProfileScreenProps = {}) {
   const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
+  const { theme, themeName, toggleTheme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
 
   const { data: company } = useQuery({
     queryKey: ['company', user?.companyId],
@@ -57,15 +66,14 @@ export function ProfileScreen() {
         contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* User card */}
         <View
           style={{
             marginBottom: 14,
             borderRadius: 20,
             overflow: 'hidden',
-            backgroundColor: colors.primarySoft,
+            backgroundColor: theme.isDark ? colors.primarySoft : `${colors.primary}14`,
             borderWidth: 1,
-            borderColor: colors.borderStrong,
+            borderColor: theme.borderStrong,
             padding: 18,
             flexDirection: 'row',
             alignItems: 'center',
@@ -82,13 +90,13 @@ export function ProfileScreen() {
               justifyContent: 'center',
             }}
           >
-            <Text style={{ color: colors.text, fontWeight: '700', fontSize: 20 }}>{initials}</Text>
+            <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 20 }}>{initials}</Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text }}>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: theme.text }}>
               {user?.firstName} {user?.lastName}
             </Text>
-            <Text style={{ fontSize: 12, color: colors.text2, marginTop: 2 }}>
+            <Text style={{ fontSize: 12, color: theme.text2, marginTop: 2 }}>
               {t('profile.user_role')}
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6 }}>
@@ -100,14 +108,13 @@ export function ProfileScreen() {
           </View>
         </View>
 
-        {/* Fleet stats */}
         <Text
           style={{
             fontSize: 11,
             fontWeight: '600',
             letterSpacing: 0.5,
             textTransform: 'uppercase',
-            color: colors.text3,
+            color: theme.text3,
             marginBottom: 8,
           }}
         >
@@ -130,14 +137,13 @@ export function ProfileScreen() {
           </View>
         </View>
 
-        {/* Settings */}
         <Text
           style={{
             fontSize: 11,
             fontWeight: '600',
             letterSpacing: 0.5,
             textTransform: 'uppercase',
-            color: colors.text3,
+            color: theme.text3,
             marginBottom: 8,
           }}
         >
@@ -145,14 +151,22 @@ export function ProfileScreen() {
         </Text>
 
         <Card padding={0}>
-          <SettingRow icon="bell" label={t('profile.notifications')} value="On" />
+          <SettingRow icon="bell" label={t('profile.notifications')} value="On" theme={theme} />
           <SettingRow
             icon="globe"
             label={t('profile.language')}
             value={i18n.language === 'uz' ? 'O\'zbek' : 'Русский'}
             onPress={() => i18n.changeLanguage(i18n.language === 'uz' ? 'ru' : 'uz')}
+            theme={theme}
           />
-          <SettingRow icon="tune" label={t('profile.theme')} value="Dark" last />
+          <SettingRow
+            icon={themeName === 'dark' ? 'moon' : 'sun'}
+            label={t('profile.theme')}
+            value={themeName === 'dark' ? 'Dark' : 'Light'}
+            onPress={toggleTheme}
+            theme={theme}
+            last
+          />
         </Card>
 
         <TouchableOpacity
@@ -186,9 +200,10 @@ interface SettingRowProps {
   value: string;
   last?: boolean;
   onPress?: () => void;
+  theme: ThemeTokens;
 }
 
-function SettingRow({ icon, label, value, last, onPress }: SettingRowProps) {
+function SettingRow({ icon, label, value, last, onPress, theme }: SettingRowProps) {
   const Comp = onPress ? TouchableOpacity : View;
   return (
     <Comp
@@ -200,7 +215,7 @@ function SettingRow({ icon, label, value, last, onPress }: SettingRowProps) {
         paddingHorizontal: 14,
         paddingVertical: 14,
         borderBottomWidth: last ? 0 : 1,
-        borderBottomColor: colors.border,
+        borderBottomColor: theme.borderSoft,
       }}
     >
       <View
@@ -208,22 +223,22 @@ function SettingRow({ icon, label, value, last, onPress }: SettingRowProps) {
           width: 32,
           height: 32,
           borderRadius: 10,
-          backgroundColor: colors.surface,
-          borderWidth: 1,
-          borderColor: colors.border,
+          backgroundColor: `${colors.primary}22`,
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <Icon name={icon} size={15} color={colors.text2} />
+        <Icon name={icon} size={15} color={colors.primary} />
       </View>
-      <Text style={{ flex: 1, fontSize: 13, fontWeight: '500', color: colors.text }}>{label}</Text>
-      <Text style={{ fontSize: 12, color: colors.text2 }}>{value}</Text>
-      {onPress && <Icon name="chevron-right" size={14} color={colors.text3} />}
+      <Text style={{ flex: 1, fontSize: 13, fontWeight: '500', color: theme.text }}>{label}</Text>
+      <Text style={{ fontSize: 12, color: theme.text2 }}>{value}</Text>
+      {onPress && <Icon name="chevron-right" size={14} color={theme.text3} />}
     </Comp>
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
-});
+function makeStyles(theme: ThemeTokens) {
+  return StyleSheet.create({
+    root: { flex: 1, backgroundColor: theme.bg },
+  });
+}

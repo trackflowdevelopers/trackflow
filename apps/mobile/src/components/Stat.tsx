@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, ViewStyle, StyleProp } from 'react-native';
 import { Card } from './Card';
 import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 
 interface StatProps {
   label: string;
@@ -12,6 +13,7 @@ interface StatProps {
 }
 
 export function Stat({ label, value, unit, sub, style }: StatProps) {
+  const { theme } = useTheme();
   return (
     <Card padding={12} style={[{ flex: 1 }, style]}>
       <Text
@@ -20,7 +22,7 @@ export function Stat({ label, value, unit, sub, style }: StatProps) {
           letterSpacing: 0.5,
           fontWeight: '600',
           textTransform: 'uppercase',
-          color: colors.text3,
+          color: theme.text3,
         }}
       >
         {label}
@@ -30,14 +32,14 @@ export function Stat({ label, value, unit, sub, style }: StatProps) {
           style={{
             fontSize: 22,
             fontWeight: '700',
-            color: colors.text,
+            color: theme.text,
             letterSpacing: -0.6,
           }}
         >
           {value}
         </Text>
         {unit && (
-          <Text style={{ fontSize: 11, color: colors.text3, fontWeight: '500' }}>{unit}</Text>
+          <Text style={{ fontSize: 11, color: theme.text3, fontWeight: '500' }}>{unit}</Text>
         )}
       </View>
       {sub && (

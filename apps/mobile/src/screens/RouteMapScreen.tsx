@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -12,18 +12,25 @@ import { useQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
-import type { RouteStop } from '@trackflow/shared-types';
+import type { RouteStop, ThemeTokens } from '@trackflow/shared-types';
 
 import { colors } from '../theme/colors';
 import { Icon } from '../components/Icon';
-import { DARK_MAP_STYLE } from '../lib/mapStyle';
+import { MapThemeFade } from '../components/MapThemeFade';
+import { getMapStyle } from '../lib/mapStyle';
 import { getVehicleRoute } from '../api/vehicles';
 import { formatDurationSec } from '../lib/status';
 import type { RootStackParamList } from '../navigation/types';
+import { useTheme } from '../theme/ThemeContext';
 
 type RouteMapNavRoute = RouteProp<RootStackParamList, 'RouteMap'>;
 
-function StopMarker({ stop, t }: { stop: RouteStop; t: (k: string) => string }) {
+interface StopMarkerProps {
+  stop: RouteStop;
+  t: (k: string) => string;
+}
+
+function StopMarker({ stop, t }: StopMarkerProps) {
   const [tracks, setTracks] = useState(true);
   const isLong = stop.durationSec >= 30 * 60;
   const bg = isLong ? colors.warn : colors.info;
@@ -62,6 +69,8 @@ export function RouteMapScreen() {
   const navigation = useNavigation();
   const { params } = useRoute<RouteMapNavRoute>();
   const { vehicleId, plateNumber, from, to } = params;
+  const { theme, themeName } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const mapRef = useRef<MapView>(null);
 
   const { data: route, isLoading } = useQuery({
@@ -103,7 +112,7 @@ export function RouteMapScreen() {
         ref={mapRef}
         provider={PROVIDER_GOOGLE}
         style={StyleSheet.absoluteFillObject}
-        customMapStyle={DARK_MAP_STYLE}
+        customMapStyle={getMapStyle(themeName)}
         initialRegion={{
           latitude: 41.2995,
           longitude: 69.2401,
@@ -149,9 +158,11 @@ export function RouteMapScreen() {
         ))}
       </MapView>
 
+      <MapThemeFade />
+
       <View style={[styles.header, { top: insets.top + 12 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Icon name="arrow-left" size={20} color={colors.text} />
+          <Icon name="arrow-left" size={20} color={theme.text} />
         </TouchableOpacity>
         <View style={styles.headerInfo}>
           <Text style={styles.headerTitle}>#{plateNumber}</Text>
@@ -170,62 +181,64 @@ export function RouteMapScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: 'rgba(15,27,48,0.95)',
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerInfo: {
-    flex: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: 'rgba(15,27,48,0.95)',
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-  },
-  headerTitle: { fontSize: 13, fontWeight: '700', color: colors.text },
-  headerSub: { fontSize: 11, color: colors.text3, marginTop: 1 },
-  startDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#22c55e',
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  endPin: { alignItems: 'center' },
-  endPinBox: {
-    padding: 5,
-    borderRadius: 8,
-    backgroundColor: colors.surface2,
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  endPinStem: { width: 2, height: 6, backgroundColor: colors.primary },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingBox: {
-    padding: 20,
-    borderRadius: 16,
-    backgroundColor: 'rgba(15,27,48,0.95)',
-  },
-});
+function makeStyles(theme: ThemeTokens) {
+  return StyleSheet.create({
+    root: { flex: 1, backgroundColor: theme.bg },
+    header: {
+      position: 'absolute',
+      left: 16,
+      right: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    backBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      backgroundColor: theme.surfaceStrong,
+      borderWidth: 1,
+      borderColor: theme.borderStrong,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    headerInfo: {
+      flex: 1,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      borderRadius: 12,
+      backgroundColor: theme.surfaceStrong,
+      borderWidth: 1,
+      borderColor: theme.borderStrong,
+    },
+    headerTitle: { fontSize: 13, fontWeight: '700', color: theme.text },
+    headerSub: { fontSize: 11, color: theme.text3, marginTop: 1 },
+    startDot: {
+      width: 14,
+      height: 14,
+      borderRadius: 7,
+      backgroundColor: '#22c55e',
+      borderWidth: 2,
+      borderColor: '#fff',
+    },
+    endPin: { alignItems: 'center' },
+    endPinBox: {
+      padding: 5,
+      borderRadius: 8,
+      backgroundColor: theme.surface2,
+      borderWidth: 1,
+      borderColor: colors.primary,
+    },
+    endPinStem: { width: 2, height: 6, backgroundColor: colors.primary },
+    loadingOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    loadingBox: {
+      padding: 20,
+      borderRadius: 16,
+      backgroundColor: theme.surfaceStrong,
+    },
+  });
+}

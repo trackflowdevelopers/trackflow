@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { ThemeTokens } from '@trackflow/shared-types';
 
 import { AppHeader } from '../components/AppHeader';
 import { Card } from '../components/Card';
@@ -27,6 +28,7 @@ import { getVehicleById, getVehicleRoute, lockVehicle, unlockVehicle } from '../
 import { buildEvents, type RouteEvent } from '../lib/events';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
 import type { RootStackParamList } from '../navigation/types';
+import { useTheme } from '../theme/ThemeContext';
 
 type EventFilter = 'all' | 'alerts' | 'stops' | 'fuel';
 type DetailRoute = RouteProp<RootStackParamList, 'Detail'>;
@@ -60,6 +62,8 @@ export function DetailScreen() {
   const navigation = useNavigation<DetailNav>();
   const { params } = useRoute<DetailRoute>();
   const { vehicleId } = params;
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const [eventFilter, setEventFilter] = useState<EventFilter>('all');
   const [selectedDate, setSelectedDate] = useState(todayLocalISO);
 
@@ -191,10 +195,9 @@ export function DetailScreen() {
         contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Date picker */}
         <View style={styles.datePicker}>
           <TouchableOpacity onPress={goToPrevDay} style={styles.dateArrowBtn}>
-            <Icon name="arrow-left" size={16} color={colors.text2} />
+            <Icon name="arrow-left" size={16} color={theme.text2} />
           </TouchableOpacity>
           <View style={{ flex: 1, alignItems: 'center' }}>
             <Text style={styles.dateLabel}>
@@ -206,11 +209,10 @@ export function DetailScreen() {
             style={[styles.dateArrowBtn, isToday && { opacity: 0.3 }]}
             disabled={isToday}
           >
-            <Icon name="arrow-right" size={16} color={colors.text2} />
+            <Icon name="arrow-right" size={16} color={theme.text2} />
           </TouchableOpacity>
         </View>
 
-        {/* Hero */}
         <View
           style={{
             position: 'relative',
@@ -229,17 +231,17 @@ export function DetailScreen() {
                 width: 56,
                 height: 56,
                 borderRadius: 16,
-                backgroundColor: colors.surface2,
+                backgroundColor: theme.surface2,
                 borderWidth: 1,
-                borderColor: colors.borderStrong,
+                borderColor: theme.borderStrong,
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <Icon name="truck" size={28} color={colors.text} />
+              <Icon name="truck" size={28} color={theme.text} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 13, color: colors.text2 }}>
+              <Text style={{ fontSize: 13, color: theme.text2 }}>
                 {vehicle.year} · {vehicle.fuelType}
               </Text>
               <View
@@ -257,7 +259,7 @@ export function DetailScreen() {
               <Text
                 style={{
                   fontSize: 11,
-                  color: colors.text3,
+                  color: theme.text3,
                   textTransform: 'uppercase',
                   letterSpacing: 0.5,
                   fontWeight: '600',
@@ -269,21 +271,20 @@ export function DetailScreen() {
                 style={{
                   fontSize: 28,
                   fontWeight: '700',
-                  color: colors.text,
+                  color: theme.text,
                   letterSpacing: -0.8,
                   lineHeight: 30,
                 }}
               >
                 {Math.round(status === 'moving' ? speed : 0)}
               </Text>
-              <Text style={{ fontSize: 10, color: colors.text3 }}>
+              <Text style={{ fontSize: 10, color: theme.text3 }}>
                 {t('units.km_per_hour')}
               </Text>
             </View>
           </View>
         </View>
 
-        {/* Stats grid 3x2 */}
         <View style={{ marginBottom: 14, gap: 8 }}>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <Stat
@@ -320,14 +321,12 @@ export function DetailScreen() {
           </View>
         </View>
 
-        {/* View on map button */}
         <TouchableOpacity onPress={openRouteMap} style={styles.mapBtn}>
-          <Icon name="map-pin" size={16} color={colors.text} />
+          <Icon name="map-pin" size={16} color={theme.text} />
           <Text style={styles.mapBtnText}>{t('detail.view_on_map')}</Text>
-          <Icon name="arrow-right" size={14} color={colors.text2} />
+          <Icon name="arrow-right" size={14} color={theme.text2} />
         </TouchableOpacity>
 
-        {/* Immobilizer button */}
         <TouchableOpacity
           onPress={handleImmobilizerPress}
           disabled={isMutating}
@@ -338,19 +337,19 @@ export function DetailScreen() {
           ]}
         >
           {isMutating ? (
-            <ActivityIndicator size="small" color={immobilized ? colors.alert : colors.text} />
+            <ActivityIndicator size="small" color={immobilized ? colors.alert : theme.text} />
           ) : (
             <Icon
               name="shield"
               size={18}
-              color={immobilized ? colors.alert : colors.text}
+              color={immobilized ? colors.alert : theme.text}
             />
           )}
           <View style={{ flex: 1 }}>
             <Text
               style={[
                 styles.immobilizerBtnText,
-                { color: immobilized ? colors.alert : colors.text },
+                { color: immobilized ? colors.alert : theme.text },
               ]}
             >
               {immobilized ? t('detail.unlock_engine') : t('detail.lock_engine')}
@@ -369,7 +368,6 @@ export function DetailScreen() {
           )}
         </TouchableOpacity>
 
-        {/* Speed chart */}
         <Card style={{ marginBottom: 14 }} padding={14}>
           <View
             style={{
@@ -379,17 +377,16 @@ export function DetailScreen() {
               marginBottom: 10,
             }}
           >
-            <Text style={{ fontSize: 13, fontWeight: '600', color: colors.text }}>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: theme.text }}>
               {t('detail.speed')} · {isToday ? t('detail.today') : formatDisplayDate(selectedDate)}
             </Text>
-            <Text style={{ fontSize: 11, color: colors.text3 }}>
+            <Text style={{ fontSize: 11, color: theme.text3 }}>
               max {Math.round(maxSpeed(route?.points ?? []))} km/h
             </Text>
           </View>
           <SpeedChart points={route?.points ?? []} />
         </Card>
 
-        {/* Driver */}
         <Card style={{ marginBottom: 14, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <View
             style={{
@@ -401,7 +398,7 @@ export function DetailScreen() {
               justifyContent: 'center',
             }}
           >
-            <Text style={{ color: colors.text, fontWeight: '700', fontSize: 16 }}>
+            <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 16 }}>
               {(vehicle.currentDriverName ?? '—')
                 .split(' ')
                 .map((s) => s[0])
@@ -414,7 +411,7 @@ export function DetailScreen() {
             <Text
               style={{
                 fontSize: 10,
-                color: colors.text3,
+                color: theme.text3,
                 textTransform: 'uppercase',
                 letterSpacing: 0.5,
                 fontWeight: '600',
@@ -423,7 +420,7 @@ export function DetailScreen() {
               {t('detail.driver')}
             </Text>
             <Text
-              style={{ fontSize: 14, fontWeight: '600', color: colors.text, marginTop: 1 }}
+              style={{ fontSize: 14, fontWeight: '600', color: theme.text, marginTop: 1 }}
             >
               {vehicle.currentDriverName ?? '—'}
             </Text>
@@ -439,22 +436,21 @@ export function DetailScreen() {
               justifyContent: 'center',
             }}
           >
-            <Icon name="phone" size={18} color={colors.text} />
+            <Icon name="phone" size={18} color="#FFFFFF" />
           </TouchableOpacity>
         </Card>
 
-        {/* Vehicle info */}
         <Card style={{ marginBottom: 14 }}>
-          <InfoRow label={t('detail.license_plate')} value={vehicle.plateNumber} />
-          <InfoRow label={t('detail.engine')} value={vehicle.fuelType} />
+          <InfoRow label={t('detail.license_plate')} value={vehicle.plateNumber} theme={theme} />
+          <InfoRow label={t('detail.engine')} value={vehicle.fuelType} theme={theme} />
           <InfoRow
             label={t('detail.odometer')}
             value={`${Math.round(vehicle.totalMileage).toLocaleString()} ${t('units.km')}`}
+            theme={theme}
           />
-          <InfoRow label={t('detail.last_service')} value="—" last />
+          <InfoRow label={t('detail.last_service')} value="—" last theme={theme} />
         </Card>
 
-        {/* Full log header */}
         <View
           style={{
             flexDirection: 'row',
@@ -463,15 +459,14 @@ export function DetailScreen() {
             marginBottom: 10,
           }}
         >
-          <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text }}>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: theme.text }}>
             {t('detail.full_log')}
           </Text>
-          <Text style={{ fontSize: 11, color: colors.text3 }}>
+          <Text style={{ fontSize: 11, color: theme.text3 }}>
             {filtered.length} {t('detail.events')}
           </Text>
         </View>
 
-        {/* Filter chips */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -488,14 +483,14 @@ export function DetailScreen() {
                   paddingHorizontal: 13,
                   paddingVertical: 7,
                   borderRadius: 999,
-                  backgroundColor: on ? colors.text : colors.surface,
+                  backgroundColor: on ? theme.chipBgActive : theme.chipBg,
                   borderWidth: 1,
-                  borderColor: on ? colors.text : colors.borderStrong,
+                  borderColor: on ? theme.chipBgActive : theme.borderStrong,
                 }}
               >
                 <Text
                   style={{
-                    color: on ? colors.bg : colors.text2,
+                    color: on ? theme.chipFgActive : theme.text2,
                     fontSize: 12,
                     fontWeight: '600',
                   }}
@@ -507,15 +502,14 @@ export function DetailScreen() {
           })}
         </ScrollView>
 
-        {/* Timeline */}
         <Card padding={0}>
           {filtered.length === 0 ? (
             <View style={{ padding: 24, alignItems: 'center' }}>
-              <Text style={{ color: colors.text3, fontSize: 13 }}>—</Text>
+              <Text style={{ color: theme.text3, fontSize: 13 }}>—</Text>
             </View>
           ) : (
             filtered.map((e, i) => (
-              <EventRow key={i} event={e} t={t} last={i === filtered.length - 1} />
+              <EventRow key={i} event={e} t={t} last={i === filtered.length - 1} theme={theme} />
             ))
           )}
         </Card>
@@ -541,7 +535,14 @@ function filterEvents(events: RouteEvent[], filter: EventFilter): RouteEvent[] {
   return events;
 }
 
-function InfoRow({ label, value, last }: { label: string; value: string; last?: boolean }) {
+interface InfoRowProps {
+  label: string;
+  value: string;
+  last?: boolean;
+  theme: ThemeTokens;
+}
+
+function InfoRow({ label, value, last, theme }: InfoRowProps) {
   return (
     <View
       style={{
@@ -550,24 +551,23 @@ function InfoRow({ label, value, last }: { label: string; value: string; last?: 
         alignItems: 'center',
         paddingVertical: 10,
         borderBottomWidth: last ? 0 : 1,
-        borderBottomColor: colors.border,
+        borderBottomColor: theme.borderSoft,
       }}
     >
-      <Text style={{ fontSize: 12, color: colors.text2 }}>{label}</Text>
-      <Text style={{ fontSize: 13, fontWeight: '600', color: colors.text }}>{value}</Text>
+      <Text style={{ fontSize: 12, color: theme.text2 }}>{label}</Text>
+      <Text style={{ fontSize: 13, fontWeight: '600', color: theme.text }}>{value}</Text>
     </View>
   );
 }
 
-function EventRow({
-  event,
-  t,
-  last,
-}: {
+interface EventRowProps {
   event: RouteEvent;
   t: (k: string) => string;
   last: boolean;
-}) {
+  theme: ThemeTokens;
+}
+
+function EventRow({ event, t, last, theme }: EventRowProps) {
   const kindColor = {
     info: colors.info,
     warn: colors.warn,
@@ -582,7 +582,7 @@ function EventRow({
         paddingHorizontal: 14,
         paddingVertical: 12,
         borderBottomWidth: last ? 0 : 1,
-        borderBottomColor: colors.border,
+        borderBottomColor: theme.borderSoft,
       }}
     >
       <View
@@ -608,15 +608,15 @@ function EventRow({
             gap: 8,
           }}
         >
-          <Text style={{ fontSize: 13, fontWeight: '600', color: colors.text }}>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: theme.text }}>
             {t(`detail.${event.type}`)}
           </Text>
-          <Text style={{ fontSize: 11, color: colors.text3 }}>
+          <Text style={{ fontSize: 11, color: theme.text3 }}>
             {new Date(event.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </Text>
         </View>
         {event.durationSec !== undefined && (
-          <Text style={{ fontSize: 11, color: colors.text2, marginTop: 2 }}>
+          <Text style={{ fontSize: 11, color: theme.text2, marginTop: 2 }}>
             {formatDurationSec(event.durationSec, t)}
           </Text>
         )}
@@ -625,82 +625,84 @@ function EventRow({
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
-  loading: {
-    flex: 1,
-    backgroundColor: colors.bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  datePicker: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 14,
-    paddingHorizontal: 4,
-  },
-  dateArrowBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dateLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  mapBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    padding: 14,
-    borderRadius: 14,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.primary + '55',
-    marginBottom: 10,
-  },
-  mapBtnText: {
-    flex: 1,
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  immobilizerBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    marginBottom: 14,
-  },
-  immobilizerBtnLocked: {
-    backgroundColor: colors.alert + '18',
-    borderColor: colors.alert + '60',
-  },
-  immobilizerBtnUnlocked: {
-    backgroundColor: colors.surface,
-    borderColor: colors.borderStrong,
-  },
-  immobilizerBtnText: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  immobilizerBtnSub: {
-    fontSize: 11,
-    color: colors.alert,
-    fontWeight: '500',
-    marginTop: 1,
-  },
-  immobilizerDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-});
+function makeStyles(theme: ThemeTokens) {
+  return StyleSheet.create({
+    root: { flex: 1, backgroundColor: theme.bg },
+    loading: {
+      flex: 1,
+      backgroundColor: theme.bg,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    datePicker: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 14,
+      paddingHorizontal: 4,
+    },
+    dateArrowBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      backgroundColor: theme.surface,
+      borderWidth: 1,
+      borderColor: theme.borderStrong,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    dateLabel: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: theme.text,
+    },
+    mapBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      padding: 14,
+      borderRadius: 14,
+      backgroundColor: theme.surface,
+      borderWidth: 1,
+      borderColor: colors.primary + '55',
+      marginBottom: 10,
+    },
+    mapBtnText: {
+      flex: 1,
+      fontSize: 13,
+      fontWeight: '600',
+      color: theme.text,
+    },
+    immobilizerBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      padding: 14,
+      borderRadius: 14,
+      borderWidth: 1,
+      marginBottom: 14,
+    },
+    immobilizerBtnLocked: {
+      backgroundColor: colors.alert + '18',
+      borderColor: colors.alert + '60',
+    },
+    immobilizerBtnUnlocked: {
+      backgroundColor: theme.surface,
+      borderColor: theme.borderStrong,
+    },
+    immobilizerBtnText: {
+      fontSize: 13,
+      fontWeight: '700',
+    },
+    immobilizerBtnSub: {
+      fontSize: 11,
+      color: colors.alert,
+      fontWeight: '500',
+      marginTop: 1,
+    },
+    immobilizerDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+    },
+  });
+}

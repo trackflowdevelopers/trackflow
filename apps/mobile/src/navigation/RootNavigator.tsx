@@ -1,13 +1,14 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import {
   createBottomTabNavigator,
   type BottomTabBarProps,
 } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { ThemeTokens } from '@trackflow/shared-types';
 
 import { HomeScreen } from '../screens/HomeScreen';
 import { DetailScreen } from '../screens/DetailScreen';
@@ -15,27 +16,17 @@ import { RouteMapScreen } from '../screens/RouteMapScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { Icon, type IconName } from '../components/Icon';
 import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import type { RootStackParamList, TabsParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tabs = createBottomTabNavigator<TabsParamList>();
 
-const navTheme = {
-  ...DefaultTheme,
-  dark: true,
-  colors: {
-    ...DefaultTheme.colors,
-    background: colors.bg,
-    card: colors.bg,
-    text: colors.text,
-    border: 'transparent',
-    primary: colors.primary,
-  },
-};
-
 function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const { theme } = useTheme();
+  const styles = useMemo(() => makeTabStyles(theme), [theme]);
 
   const items: { route: 'Home' | 'Profile'; icon: IconName; label: string }[] = [
     { route: 'Home', icon: 'home', label: t('nav.home') },
@@ -81,11 +72,11 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
               <Icon
                 name={it.icon}
                 size={18}
-                color={focused ? colors.text : 'rgba(255,255,255,0.6)'}
+                color={focused ? '#FFFFFF' : theme.text2}
               />
               <Text
                 style={{
-                  color: focused ? colors.text : 'rgba(255,255,255,0.6)',
+                  color: focused ? '#FFFFFF' : theme.text2,
                   fontWeight: '600',
                   fontSize: 13,
                 }}
@@ -113,9 +104,26 @@ function MainTabs() {
 }
 
 export function RootNavigator() {
+  const { theme } = useTheme();
+  const navTheme = useMemo(
+    () => ({
+      ...(theme.isDark ? DarkTheme : DefaultTheme),
+      dark: theme.isDark,
+      colors: {
+        ...(theme.isDark ? DarkTheme.colors : DefaultTheme.colors),
+        background: theme.bg,
+        card: theme.bg,
+        text: theme.text,
+        border: 'transparent',
+        primary: colors.primary,
+      },
+    }),
+    [theme],
+  );
+
   return (
     <NavigationContainer theme={navTheme}>
-      <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
+      <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.bg } }}>
         <Stack.Screen name="Tabs" component={MainTabs} />
         <Stack.Screen name="Detail" component={DetailScreen} />
         <Stack.Screen name="RouteMap" component={RouteMapScreen} />
@@ -124,32 +132,39 @@ export function RootNavigator() {
   );
 }
 
-const styles = StyleSheet.create({
-  tabBarWrap: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: 24,
-    paddingTop: 10,
-  },
-  tabBar: {
-    flexDirection: 'row',
-    gap: 6,
-    padding: 6,
-    backgroundColor: 'rgba(20,30,52,0.92)',
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    borderRadius: 22,
-  },
-  tabBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 12,
-    borderRadius: 16,
-  },
-});
+function makeTabStyles(theme: ThemeTokens) {
+  return StyleSheet.create({
+    tabBarWrap: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      paddingHorizontal: 24,
+      paddingTop: 10,
+    },
+    tabBar: {
+      flexDirection: 'row',
+      gap: 6,
+      padding: 6,
+      backgroundColor: theme.navBg,
+      borderWidth: 1,
+      borderColor: theme.borderStrong,
+      borderRadius: 22,
+      shadowColor: theme.cardShadow,
+      shadowOpacity: theme.isDark ? 0 : 1,
+      shadowRadius: theme.isDark ? 0 : 16,
+      shadowOffset: { width: 0, height: theme.isDark ? 0 : 8 },
+      elevation: theme.isDark ? 0 : 8,
+    },
+    tabBtn: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      paddingHorizontal: 10,
+      paddingVertical: 12,
+      borderRadius: 16,
+    },
+  });
+}

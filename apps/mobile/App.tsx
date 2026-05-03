@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { colors } from './src/theme/colors';
+import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -20,13 +21,14 @@ const queryClient = new QueryClient({
 
 function RootGate() {
   const { user, isLoading } = useAuth();
+  const { theme } = useTheme();
 
   if (isLoading) {
     return (
       <View
         style={{
           flex: 1,
-          backgroundColor: colors.bg,
+          backgroundColor: theme.bg,
           alignItems: 'center',
           justifyContent: 'center',
         }}
@@ -41,14 +43,21 @@ function RootGate() {
   return <RootNavigator />;
 }
 
+function ThemedStatusBar() {
+  const { theme } = useTheme();
+  return <StatusBar barStyle={theme.statusBarStyle} backgroundColor={theme.bg} />;
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
-        <AuthProvider>
-          <StatusBar barStyle="light-content" backgroundColor={colors.bg} />
-          <RootGate />
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <ThemedStatusBar />
+            <RootGate />
+          </AuthProvider>
+        </ThemeProvider>
       </SafeAreaProvider>
     </QueryClientProvider>
   );

@@ -5,6 +5,7 @@ import type { Vehicle, WsVehicleUpdate } from '@trackflow/shared-types';
 import { Icon, StatusIcon } from './Icon';
 import { STATUS_STYLE, colors } from '../theme/colors';
 import { toStatusKey } from '../lib/status';
+import { useTheme } from '../theme/ThemeContext';
 
 interface SelectedPreviewProps {
   vehicle: Vehicle;
@@ -15,6 +16,7 @@ interface SelectedPreviewProps {
 
 export function SelectedPreview({ vehicle, live, onOpen, onClose }: SelectedPreviewProps) {
   const { t } = useTranslation();
+  const { theme } = useTheme();
   const status = toStatusKey(live?.status ?? vehicle.status);
   const c = STATUS_STYLE[status];
   const speed = live?.speed ?? vehicle.lastSpeed ?? 0;
@@ -29,11 +31,16 @@ export function SelectedPreview({ vehicle, live, onOpen, onClose }: SelectedPrev
         left: 12,
         right: 12,
         bottom: 12,
-        backgroundColor: 'rgba(15,27,48,0.95)',
+        backgroundColor: theme.surfaceStrong,
         borderWidth: 1,
-        borderColor: colors.borderStrong,
+        borderColor: theme.borderStrong,
         borderRadius: 18,
         padding: 14,
+        shadowColor: theme.cardShadow,
+        shadowOpacity: theme.isDark ? 0 : 1,
+        shadowRadius: theme.isDark ? 0 : 12,
+        shadowOffset: { width: 0, height: theme.isDark ? 0 : 8 },
+        elevation: theme.isDark ? 0 : 6,
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -54,15 +61,15 @@ export function SelectedPreview({ vehicle, live, onOpen, onClose }: SelectedPrev
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
             <Text
-              style={{ fontWeight: '700', fontSize: 16, color: colors.text, letterSpacing: -0.3 }}
+              style={{ fontWeight: '700', fontSize: 16, color: theme.text, letterSpacing: -0.3 }}
             >
               #{vehicle.plateNumber}
             </Text>
-            <Text style={{ fontSize: 12, color: colors.text2 }}>
+            <Text style={{ fontSize: 12, color: theme.text2 }}>
               {vehicle.make} {vehicle.model}
             </Text>
           </View>
-          <Text style={{ fontSize: 12, color: colors.text2, marginTop: 2 }} numberOfLines={1}>
+          <Text style={{ fontSize: 12, color: theme.text2, marginTop: 2 }} numberOfLines={1}>
             {driverName}
           </Text>
         </View>
@@ -73,12 +80,12 @@ export function SelectedPreview({ vehicle, live, onOpen, onClose }: SelectedPrev
             height: 28,
             borderRadius: 8,
             borderWidth: 1,
-            borderColor: colors.borderStrong,
+            borderColor: theme.borderStrong,
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <Icon name="close" size={14} color={colors.text2} />
+          <Icon name="close" size={14} color={theme.text2} />
         </TouchableOpacity>
       </View>
 
@@ -101,10 +108,10 @@ export function SelectedPreview({ vehicle, live, onOpen, onClose }: SelectedPrev
           gap: 8,
         }}
       >
-        <Text style={{ color: colors.text, fontSize: 14, fontWeight: '600' }}>
+        <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '600' }}>
           {t('detail.open_details')}
         </Text>
-        <Icon name="arrow-right" size={16} color={colors.text} />
+        <Icon name="arrow-right" size={16} color="#FFFFFF" />
       </TouchableOpacity>
     </View>
   );
@@ -119,6 +126,7 @@ interface PreviewStatProps {
 }
 
 function PreviewStat({ label, value, unit, color, statusKey }: PreviewStatProps) {
+  const { theme } = useTheme();
   return (
     <View
       style={{
@@ -126,9 +134,9 @@ function PreviewStat({ label, value, unit, color, statusKey }: PreviewStatProps)
         paddingHorizontal: 10,
         paddingVertical: 8,
         borderRadius: 10,
-        backgroundColor: colors.surface,
+        backgroundColor: theme.surface,
         borderWidth: 1,
-        borderColor: colors.border,
+        borderColor: theme.borderSoft,
       }}
     >
       <Text
@@ -137,7 +145,7 @@ function PreviewStat({ label, value, unit, color, statusKey }: PreviewStatProps)
           fontWeight: '600',
           letterSpacing: 0.4,
           textTransform: 'uppercase',
-          color: colors.text3,
+          color: theme.text3,
         }}
       >
         {label}
@@ -148,13 +156,13 @@ function PreviewStat({ label, value, unit, color, statusKey }: PreviewStatProps)
           style={{
             fontSize: 13,
             fontWeight: '700',
-            color: color ?? colors.text,
+            color: color ?? theme.text,
             letterSpacing: -0.2,
           }}
         >
           {value}
         </Text>
-        {unit && <Text style={{ fontSize: 10, color: colors.text3 }}>{unit}</Text>}
+        {unit && <Text style={{ fontSize: 10, color: theme.text3 }}>{unit}</Text>}
       </View>
     </View>
   );
