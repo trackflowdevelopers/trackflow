@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Track Flow",
-    "slug": "trackflow",
+    "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -40,6 +40,7 @@
       "eas": {
         "projectId": "3688342d-6cbe-4ff5-a584-cbfd6cf8167e"
       }
-    }
+    },
+    "owner": "ulugbekasadov"
   }
 }
