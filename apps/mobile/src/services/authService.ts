@@ -1,7 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import { AuthUser, LoginResponse } from "@trackflow/shared-types";
-
-const API_BASE_URL = "http://192.168.1.100:4000/api";
+import { API_BASE_URL } from "../api/client";
 
 const ACCESS_TOKEN_KEY = "trackflow_access_token";
 const REFRESH_TOKEN_KEY = "trackflow_refresh_token";
