@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "Track Flow",
+    "slug": "trackflow",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,7 +13,8 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "uz.trackflow.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -27,7 +28,7 @@
           "apiKey": "AIzaSyBKd6VjdL4z3rCNnYEYuUx71Tq8z5-bZ_g"
         }
       },
-      "package": "com.ulugbekasadov.mobile"
+      "package": "uz.trackflow.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"

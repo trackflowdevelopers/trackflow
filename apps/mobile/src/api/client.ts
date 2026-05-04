@@ -1,7 +1,7 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
-export const API_BASE_URL = 'http://192.168.1.100:4000/api';
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://192.168.1.100:4000/api';
 export const SOCKET_URL = API_BASE_URL.replace('/api', '');
 
 const ACCESS_TOKEN_KEY = 'trackflow_access_token';
